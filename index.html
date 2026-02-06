@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>HISINGY: FINAL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
+
+        body {
+            margin: 0; background-color: #000; color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            height: 100vh; display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none;
+        }
+
+        #game-container {
+            position: relative; width: 960px; height: 540px;
+            background: #010103; border: 2px solid #222;
+            box-shadow: 0 0 150px rgba(0, 100, 255, 0.2);
+            overflow: hidden;
+        }
+
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px; opacity: 0.8; mix-blend-mode: overlay;
+        }
+
+        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; padding: 25px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: space-between;
+            z-index: 60;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
+        
+        .hud-panel {
+            background: rgba(0, 5, 10, 0.7); border: 1px solid rgba(0, 255, 255, 0.1);
+            border-top: 3px solid #0ff; padding: 10px 20px;
+            backdrop-filter: blur(4px); transform: skewX(-15deg);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+        }
+
+        .label { font-size: 10px; color: #0ff; letter-spacing: 2px; margin-bottom: 2px; font-weight: 800; opacity: 0.8; transform: skewX(15deg); }
+        .value { font-size: 32px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
+
+        .hp-bar { display: flex; gap: 3px; transform: skewX(15deg); margin-top: 5px; }
+        .hp-seg { width: 8px; height: 14px; background: #112; border: 1px solid #334; transition: 0.1s; }
+        .hp-seg.on { background: #0ff; box-shadow: 0 0 8px #0ff; border-color:#fff; }
+        .hp-seg.low { background: #f05; box-shadow: 0 0 12px #f05; border-color:#fff; animation: blink 0.1s infinite; }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 2, 4, 0.95); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        h1 {
+            font-family: 'Audiowide'; font-size: 70px; color: #fff; margin: 0;
+            text-shadow: 0 0 20px #0ff, 3px 3px 0 #f0f;
+            letter-spacing: 5px; animation: glitch 3s infinite;
+        }
+        
+        /* 按钮基础样式 */
+        .btn {
+            background: transparent; border: 2px solid #fff; color: #fff;
+            font-family: 'Rajdhani'; font-size: 20px; font-weight: 800; padding: 15px 40px;
+            cursor: pointer; margin: 0 15px; transition: 0.2s; position: relative; overflow: hidden;
+            text-transform: uppercase; letter-spacing: 2px; min-width: 120px;
+        }
+        .btn:hover { transform: scale(1.05); }
+
+        /* 1. EASY - 绿色 */
+        .btn-easy { border-color: #0f0; color: #0f0; box-shadow: 0 0 15px rgba(0,255,0,0.2); }
+        .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 50px #0f0; }
+
+        /* 2. NORMAL - 黄色 */
+        .btn-norm { border-color: #ff0; color: #ff0; box-shadow: 0 0 15px rgba(255,255,0,0.2); }
+        .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 50px #ff0; }
+
+        /* 3. NAN MODE - 红色 */
+        .btn-nan { border-color: #f00; color: #f00; box-shadow: 0 0 15px rgba(255,0,0,0.2); }
+        .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 60px #f00; }
+
+        .nan-msg {
+            font-size: 28px; font-weight: bold; margin-bottom: 30px;
+            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            background-size: 400% 400%;
+            -webkit-background-clip: text; color: transparent;
+            animation: rainbow 5s ease infinite;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        #console-log {
+            width: 500px; height: 100px; background: #000; border: 1px solid #333;
+            padding: 15px; font-size: 12px; color: #0f0; overflow-y:auto; text-align: left;
+            margin: 20px 0; font-family: monospace; opacity: 0.8;
+        }
+
+        #titan-msg {
+            position: absolute; top: 35%; width: 100%; text-align: center;
+            font-size: 120px; color: #fff; font-family: 'Audiowide';
+            text-shadow: 0 0 60px #f05; display: none; z-index: 20; letter-spacing: 10px; 
+            mix-blend-mode: overlay; animation: pulse 0.1s infinite;
+        }
+
+        @keyframes glitch { 0%{transform:skew(0deg)} 20%{transform:skew(-5deg)} 22%{transform:skew(5deg)} 24%{transform:skew(0deg)} }
+        @keyframes blink { 0%{opacity:1} 50%{opacity:0.2} }
+        @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} }
+        @keyframes rainbow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="scanlines"></div>
+    <div id="game-view"></div>
+    
+    <div id="ui-layer">
+        <div class="hud-row">
+            <div class="hud-panel">
+                <div class="label">SHIELD INTEGRITY</div>
+                <div class="hp-bar" id="hp-bar"></div>
+            </div>
+            <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
+                <div class="label" style="color:#f0f;">SCORE</div>
+                <div class="value" id="ui-score">000000</div>
+                <div class="label" style="margin-top:5px; color:#aaa;">DISTANCE</div>
+                <div class="value" style="font-size:18px; color:#aaa;" id="ui-dist">0 KM</div>
+            </div>
+        </div>
+        <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
+            <div class="label" style="color:#f05;">EMP SYSTEM</div>
+            <div class="value" style="color:#f05; letter-spacing:5px;" id="ui-bomb">☢☢☢</div>
+        </div>
+    </div>
+
+    <div id="titan-msg">TITAN MODE</div>
+
+    <div id="menu-screen" class="overlay">
+        <h1>HISINGY</h1>
+        <div style="font-size:16px; color:#888; letter-spacing:10px; margin-bottom:40px;">TRILOGY EDITION</div>
+        <div style="display:flex; gap: 20px;">
+            <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
+            <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
+            <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
+        </div>
+    </div>
+
+    <div id="loader-screen" class="overlay" style="display:none;">
+        <h1 style="font-size:50px;">SYSTEM BOOT</h1>
+        <div id="console-log">
+            <div>> CORE ONLINE.</div>
+            <div style="color:#888">> WAITING FOR ASSETS...</div>
+        </div>
+        <button class="btn" id="load-btn" style="border-color:#aaa; color:#aaa;">
+            LOAD DATA
+            <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
+        </button>
+        <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:20px; border-color:#0f0; color:#0f0; box-shadow:0 0 30px #0f0;">>>> LAUNCH <<<</button>
+    </div>
+
+    <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
+        <h1 style="font-size:80px; animation:none;">PAUSED</h1>
+        <div style="margin-top:20px; font-size:24px; letter-spacing:2px;">PRESS [V] TO RESUME</div>
+    </div>
+
+    <div id="game-over-screen" class="overlay" style="display:none;">
+        <h1 style="color:#f05; font-size:80px;">CRITICAL FAILURE</h1>
+        <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
+        <div style="font-size:30px; margin-bottom:40px; font-family:'Rajdhani';">FINAL SCORE: <span id="final-score" style="color:#fff;">0</span></div>
+        <button class="btn" onclick="returnToMenu()">REBOOT SYSTEM</button>
+    </div>
+</div>
+
+<script>
+PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+PIXI.settings.ROUND_PIXELS = true;
+
+const TARGET_SIZES = {
+    P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, 
+    ITEM: 48, BULLET_P: 48, BULLET_E: 32 
+};
+
+const C = { C:0x00FFFF, M:0xFF00FF, Y:0xFFFF00, R:0xFF3333, G:0x39FF14, O:0xFFA500, W:0xFFFFFF };
+let difficulty = 2;
+let assetsReady = false; 
+
+function getScale(tex, target) {
+    if(!tex) return 1;
+    return target / Math.max(tex.width, tex.height);
+}
+
+function selectDifficulty(mode) {
+    difficulty = mode;
+    document.getElementById('menu-screen').style.display='none';
+    if(assetsReady) startGame();
+    else document.getElementById('loader-screen').style.display='flex';
+}
+
+function returnToMenu() {
+    state='MENU'; AudioSys.stopBGM();
+    gameLayer.removeChildren(); fxLayer.removeChildren(); trailLayer.removeChildren();
+    document.getElementById('game-over-screen').style.display='none';
+    document.getElementById('ui-layer').style.display='none';
+    document.getElementById('menu-screen').style.display='flex';
+}
+
+const Assets = { tex:{}, snd:{}, 
+    log(m) { const c=document.getElementById('console-log'); c.innerHTML+=`<div>> ${m}</div>`; c.scrollTop=c.scrollHeight; },
+    load(files) {
+        let cnt = 0, total = files.length;
+        if(total===0) return;
+        document.getElementById('console-log').innerHTML = ''; 
+        this.log(`SCANNING ${total} FILES...`);
+        
+        const check = () => {
+            cnt++;
+            if(cnt >= total) {
+                document.getElementById('load-btn').style.display='none';
+                document.getElementById('start-btn').style.display='inline-block';
+                Assets.log("ALL SYSTEMS GREEN.");
+                assetsReady = true; 
+            }
+        };
+
+        Array.from(files).forEach(f => {
+            const n = f.name.toLowerCase();
+            const url = URL.createObjectURL(f);
+            if(f.name.endsWith('.png')) {
+                PIXI.Texture.fromURL(url).then(t => { 
+                    if(n==='player.png') this.tex['P'] = t;
+                    else if(n==='player_up.png') this.tex['P_UP'] = t;
+                    else if(n==='player_down.png') this.tex['P_DOWN'] = t;
+                    else if(n==='player_titan.png') this.tex['P_TITAN'] = t;
+                    else if(n.includes('bg_far')) this.tex['BG_FAR'] = t;
+                    else if(n.includes('bg_mid')) this.tex['BG_MID'] = t;
+                    else if(n.includes('bg_near')) this.tex['BG_NEAR'] = t;
+                    else if(n.includes('bullet_player')) this.tex['B_P'] = t;
+                    else if(n.includes('bullet_enemy')) this.tex['B_E'] = t;
+                    else if(n.includes('scout')) this.tex['E0'] = t;
+                    else if(n.includes('turret')) this.tex['E1'] = t;
+                    else if(n.includes('interceptor')) this.tex['E2'] = t;
+                    else if(n.includes('heavy')) this.tex['E3'] = t;
+                    else if(n.includes('swarm')) this.tex['E4'] = t;
+                    else if(n.includes('item_box')) this.tex['ITEM'] = t;
+                    else if(n.includes('particle')) this.tex['PART'] = t;
+                    this.log(`IMG: ${f.name}`); check(); 
+                }).catch(()=>check());
+            } else if(f.name.endsWith('.wav') || f.name.endsWith('.mp3')) {
+                const r = new FileReader();
+                r.onload = e => AudioSys.ctx.decodeAudioData(e.target.result, b => {
+                    let k='u'; 
+                    if(n.includes('shoot'))k='shoot'; else if(n.includes('boom'))k='boom';
+                    else if(n.includes('power'))k='power'; else if(n.includes('titan'))k='titan';
+                    else if(n.includes('emp'))k='emp'; else if(n.includes('bgm'))k='bgm';
+                    this.snd[k]=b; this.log(`SND: ${f.name}`); check();
+                }, ()=>check());
+                r.readAsArrayBuffer(f);
+            } else { check(); }
+        });
+    }
+};
+document.getElementById('file-input').addEventListener('change', e=>Assets.load(e.target.files));
+
+const AudioSys = {
+    ctx: new (window.AudioContext||window.webkitAudioContext)(), bgm:null,
+    play(k, loop=false) {
+        if(!Assets.snd[k]) return;
+        const s=this.ctx.createBufferSource(); s.buffer=Assets.snd[k]; s.loop=loop;
+        const g=this.ctx.createGain(); g.gain.value=k=='bgm'?0.4:0.5;
+        s.connect(g); g.connect(this.ctx.destination); s.start(0);
+        if(k=='bgm') this.bgm=s;
+    },
+    stopBGM(){if(this.bgm){this.bgm.stop(); this.bgm=null;}},
+    suspend(){ if(this.ctx.state==='running') this.ctx.suspend(); },
+    resume(){ if(this.ctx.state==='suspended') this.ctx.resume(); }
+};
+
+function createGlowingBullet(color, isEnemy) {
+    const g = new PIXI.Graphics();
+    g.beginFill(color, 0.4); 
+    if(isEnemy) g.drawCircle(0,0, 12); else g.drawEllipse(0,0, 20, 8);
+    g.endFill();
+    g.beginFill(0xFFFFFF);
+    if(isEnemy) g.drawCircle(0,0, 6); else g.drawEllipse(0,0, 12, 4);
+    g.endFill();
+    return app.renderer.generateTexture(g);
+}
+
+function createRectTex(w,h,c) {
+    const g = new PIXI.Graphics(); g.beginFill(c); g.lineStyle(2,0xFFFFFF); g.drawRect(0,0,w,h); g.endFill();
+    return app.renderer.generateTexture(g);
+}
+
+function initDefaults() {
+    if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
+    if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
+    if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
+    
+    if(!Assets.tex['B_P']) Assets.tex['B_P'] = createGlowingBullet(C.C, false);
+    if(!Assets.tex['B_E']) Assets.tex['B_E'] = createGlowingBullet(C.R, true);
+    
+    if(!Assets.tex['ITEM']) Assets.tex['ITEM'] = createRectTex(30,30,C.Y);
+    const cols = [C.G, C.R, C.C, C.O, C.M];
+    for(let i=0;i<5;i++) if(!Assets.tex['E'+i]) Assets.tex['E'+i] = createRectTex(40,40,cols[i]);
+}
+
+let app, stage, bgLayer, trailLayer, gameLayer, fxLayer, bloomFilter, rgbSplit;
+let player, bullets=[], ebullets=[], enemies=[], items=[], particles=[], backgrounds=[], afterImages=[];
+let state='MENU', score=0, dist=0, speed=1.0, shake=0, flash=0, time=0;
+const keys={};
+
+window.onload = function() {
+    app = new PIXI.Application({width:960, height:540, backgroundColor:0x050508, antialias:false});
+    document.getElementById('game-view').appendChild(app.view);
+    stage = new PIXI.Container(); app.stage.addChild(stage);
+    
+    bgLayer = new PIXI.Container(); stage.addChild(bgLayer);
+    trailLayer = new PIXI.Container(); stage.addChild(trailLayer);
+    gameLayer = new PIXI.Container(); stage.addChild(gameLayer);
+    fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
+    
+    try { 
+        if(PIXI.filters) {
+            bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5});
+            rgbSplit = new PIXI.filters.RGBSplitFilter();
+            rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0};
+            stage.filters = [bloomFilter, rgbSplit];
+        }
+    } catch(e){}
+    
+    initDefaults();
+    const hpCon = document.getElementById('hp-bar');
+    for(let i=0; i<20; i++) { hpCon.appendChild(document.createElement('div')).className = 'hp-seg on'; }
+    app.ticker.add(loop);
+};
+
+function createParallax() {
+    bgLayer.removeChildren(); backgrounds = [];
+    if (Assets.tex['BG_FAR']) {
+        const layers = [{t:'BG_FAR',s:0.2}, {t:'BG_MID',s:1.0}, {t:'BG_NEAR',s:2.5}];
+        layers.forEach(l => {
+            if(!Assets.tex[l.t]) return;
+            const bg = new PIXI.TilingSprite(Assets.tex[l.t], 960, 540);
+            if(Assets.tex[l.t].height > 0) bg.tileScale.set(1, 540/Assets.tex[l.t].height);
+            bg.scrollSpeed = l.s;
+            bgLayer.addChild(bg);
+            backgrounds.push(bg);
+        });
+    } else {
+        const g = new PIXI.Graphics(); g.lineStyle(2, 0x111133);
+        for(let i=0; i<1000; i+=50) g.moveTo(i,0).lineTo(i,540);
+        for(let i=0; i<600; i+=50) g.moveTo(0,i).lineTo(960,i);
+        bgLayer.addChild(g);
+    }
+}
+
+function startGame() {
+    AudioSys.ctx.resume(); AudioSys.play('bgm', true);
+    document.getElementById('loader-screen').style.display='none';
+    document.getElementById('ui-layer').style.display='flex';
+    initDefaults(); 
+    resetGame();
+}
+
+function resetGame() {
+    AudioSys.stopBGM(); AudioSys.play('bgm', true);
+    document.getElementById('game-over-screen').style.display='none';
+    gameLayer.removeChildren(); trailLayer.removeChildren(); fxLayer.removeChildren();
+    createParallax();
+
+    bullets=[]; ebullets=[]; enemies=[]; items=[]; particles=[]; afterImages=[]; score=0; dist=0; speed=1.0;
+    
+    player = new PIXI.Sprite(Assets.tex['P']); 
+    player.anchor.set(0.5); player.x=100; player.y=270;
+    let s = getScale(Assets.tex['P'], TARGET_SIZES.P);
+    player.scale.set(s); player.baseScale = s;
+    
+    player.hp=100; player.bombs=3; player.weapon=1; player.cd=0; player.titan=0; player.inv=0;
+    
+    const shield = new PIXI.Graphics();
+    shield.lineStyle(2, C.C); shield.drawCircle(0,0, 50); 
+    shield.alpha = 0; player.shieldGfx = shield; player.addChild(shield);
+
+    gameLayer.addChild(player);
+    state='PLAY'; 
+}
+
+function spawnEnemy() {
+    let baseSpawn = 0.015; 
+    if(difficulty === 1) baseSpawn = 0.008;
+    if(difficulty === 3) baseSpawn = 0.038; 
+
+    if(Math.random() >= baseSpawn * speed * (app.ticker.deltaMS/16.6)) return;
+
+    const id = Math.floor(Math.random()*5);
+    const tex = Assets.tex['E'+id];
+    if(!tex) return;
+    
+    const s = [{h:2,v:6,sc:100},{h:5,v:3,sc:300},{h:4,v:5,sc:200},{h:30,v:1.0,sc:1000},{h:1,v:7,sc:150}][id];
+    if(difficulty === 1) s.v *= 0.7; 
+    if(difficulty === 3) s.v *= 1.2; 
+
+    if(id === 4) { 
+        const baseY = 50 + Math.random()*440;
+        let scale = getScale(tex, TARGET_SIZES.E_XS); 
+        for(let k=0; k<3; k++) {
+            const e = new PIXI.Sprite(tex); e.anchor.set(0.5); e.scale.set(scale);
+            e.x = 1000 + k*40; e.y = baseY + (k===1 ? -30 : (k===2 ? 30 : 0));
+            e.t=0; e.hp=s.h; e.vx=s.v; e.score=s.sc; e.id=id; e.squad = Math.random();
+            enemies.push(e); gameLayer.addChildAt(e, 0);
+        }
+    } else {
+        const e = new PIXI.Sprite(tex); e.anchor.set(0.5); e.x=1000; 
+        e.y = 60 + Math.random()*420;
+        let scale = getScale(tex, id===3 ? TARGET_SIZES.E_L : (id===0 ? TARGET_SIZES.E_S : TARGET_SIZES.E_M));
+        e.scale.set(scale);
+        e.t=0; e.hp=s.h; e.vx=s.v; e.score=s.sc; e.id=id;
+        enemies.push(e); gameLayer.addChildAt(e, 0);
+    }
+}
+
+function createExplosion(x, y, color, size=1) {
+    const flash = new PIXI.Graphics();
+    flash.beginFill(0xFFFFFF); flash.drawCircle(0,0, 30*size); flash.endFill();
+    flash.x=x; flash.y=y; flash.life=0.1; flash.type='flash'; flash.blendMode=PIXI.BLEND_MODES.ADD;
+    fxLayer.addChild(flash); particles.push(flash);
+
+    const wave = new PIXI.Graphics();
+    wave.lineStyle(4, color); wave.drawCircle(0,0, 10*size);
+    wave.x=x; wave.y=y; wave.life=0.4; wave.type='wave';
+    wave.blendMode = PIXI.BLEND_MODES.ADD; 
+    fxLayer.addChild(wave); particles.push(wave);
+
+    const count = 16 * size;
+    for(let i=0; i<count; i++) {
+        let p;
+        if(Assets.tex['PART']) { p = new PIXI.Sprite(Assets.tex['PART']); p.tint=color; p.anchor.set(0.5); }
+        else { p = new PIXI.Graphics(); p.beginFill(color); p.drawRect(-2,-2,4,4); }
+        p.x=x; p.y=y;
+        const a = Math.random()*6.28; const s = Math.random()*10+2;
+        p.vx = Math.cos(a)*s; p.vy = Math.sin(a)*s;
+        p.life = 1.0; p.decay = Math.random()*0.05 + 0.02;
+        p.rotationSpeed = (Math.random()-0.5)*0.5;
+        p.blendMode = PIXI.BLEND_MODES.ADD; 
+        fxLayer.addChild(p); particles.push(p);
+    }
+}
+
+function createGhost(target) {
+    const ghost = new PIXI.Sprite(target.texture);
+    ghost.anchor.set(0.5); ghost.x = target.x; ghost.y = target.y; 
+    ghost.scale.copyFrom(target.scale); ghost.rotation = target.rotation;
+    ghost.alpha = 0.5; ghost.tint = target.titan>0 ? C.O : C.C;
+    ghost.blendMode = PIXI.BLEND_MODES.ADD;
+    trailLayer.addChild(ghost); afterImages.push(ghost);
+}
+
+function getRainbowColor(t) {
+    const r = Math.sin(t)*127+128; const g = Math.sin(t+2)*127+128; const b = Math.sin(t+4)*127+128;
+    return (r<<16)|(g<<8)|b;
+}
+
+function loop(delta) {
+    if(state === 'PAUSED') return; 
+    if(state!=='PLAY') return;
+    
+    time += 0.1 * delta;
+    dist += 0.5 * speed * delta; speed = 1.0 + dist/8000;
+    
+    if(shake>0) { 
+        stage.position.set((Math.random()-0.5)*shake, (Math.random()-0.5)*shake); 
+        shake*=0.9; 
+        if(rgbSplit) { rgbSplit.red = {x: shake/2, y: 0}; rgbSplit.blue = {x: -shake/2, y: 0}; }
+    } else if(rgbSplit) {
+        rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0};
+    }
+    
+    if(flash>0) { const f = new PIXI.Graphics(); f.beginFill(0xffffff, flash); f.drawRect(0,0,960,540); fxLayer.addChild(f); setTimeout(()=>fxLayer.removeChild(f), 50); flash=0; }
+
+    let spd = player.titan>0 ? 9 : 6;
+    let my=0, mx=0; if(keys['ArrowUp']||keys['w']) my=-1; if(keys['ArrowDown']||keys['s']) my=1;
+    if(keys['ArrowLeft']||keys['a']) mx=-1; if(keys['ArrowRight']||keys['d']) mx=1;
+    player.x += mx*spd*delta; player.y += my*spd*delta;
+    player.x=Math.max(40,Math.min(920,player.x)); player.y=Math.max(40,Math.min(500,player.y));
+
+    let targetTex = Assets.tex['P'];
+    let targetScale = player.baseScale;
+
+    if(player.titan > 0) {
+        if(Assets.tex['P_TITAN']) targetTex = Assets.tex['P_TITAN'];
+        targetScale = 2.5; 
+    } else {
+        if(my < 0 && Assets.tex['P_UP']) targetTex = Assets.tex['P_UP'];
+        else if(my > 0 && Assets.tex['P_DOWN']) targetTex = Assets.tex['P_DOWN'];
+    }
+
+    if(player.texture !== targetTex) player.texture = targetTex;
+    player.scale.x += (targetScale - player.scale.x) * 0.1;
+    player.scale.y += (targetScale - player.scale.y) * 0.1;
+    
+    if(speed > 1.5 || player.titan > 0) {
+        if(Math.random() > 0.5) createGhost(player);
+    }
+
+    if(player.inv > 0) { player.shieldGfx.alpha = 0.6+Math.sin(time*2)*0.4; player.visible = Math.floor(time*2)%2; } 
+    else { player.shieldGfx.alpha = 0; player.visible = true; }
+
+    if(player.cd>0) player.cd-=delta;
+    if(keys[' '] && player.cd<=0) {
+        const tex = Assets.tex['B_P']; 
+        const b = new PIXI.Sprite(tex); 
+        b.anchor.set(0.5); b.x=player.x+40*player.scale.x; b.y=player.y; 
+        b.scale.set(getScale(tex, TARGET_SIZES.BULLET_P)); 
+        b.tint = getRainbowColor(time);
+        b.blendMode = PIXI.BLEND_MODES.ADD; 
+        bullets.push(b); fxLayer.addChild(b); 
+        
+        if(player.weapon>=2) { 
+            const b2=new PIXI.Sprite(tex); b2.anchor.set(0.5); b2.x=player.x; b2.y=player.y-15; b2.vy=-2; 
+            b2.scale.copyFrom(b.scale); b2.tint=b.tint; b2.blendMode=PIXI.BLEND_MODES.ADD; bullets.push(b2); fxLayer.addChild(b2); 
+        }
+        if(player.weapon>=3) { 
+            const b3=new PIXI.Sprite(tex); b3.anchor.set(0.5); b3.x=player.x; b3.y=player.y+15; b3.vy=2; 
+            b3.scale.copyFrom(b.scale); b3.tint=b.tint; b3.blendMode=PIXI.BLEND_MODES.ADD; bullets.push(b3); fxLayer.addChild(b3); 
+        }
+        player.cd=8; AudioSys.play('shoot');
+    }
+    
+    const p = new PIXI.Graphics();
+    p.beginFill(player.titan>0 ? C.O : C.C); p.drawRect(0,0,4,4);
+    p.x=player.x - 30 * player.scale.x; p.y=player.y+(Math.random()-0.5)*10;
+    p.vx=-10-Math.random()*5; p.life=1.0; p.decay=0.08; p.blendMode=PIXI.BLEND_MODES.ADD;
+    particles.push(p); trailLayer.addChild(p);
+
+    if(backgrounds.length > 0) backgrounds.forEach(bg => { bg.tilePosition.x -= bg.scrollSpeed * speed * delta; });
+
+    spawnEnemy();
+
+    for(let i=enemies.length-1; i>=0; i--) {
+        const e = enemies[i]; e.x -= e.vx * speed * delta; e.t += 0.05 * delta;
+        if(e.id==2) e.y += Math.sin(e.t)*2; 
+        if(e.id==4) e.y += Math.sin(time + e.squad)*1.5; 
+        
+        let shootBase = 0.015;
+        if(difficulty === 1) shootBase = 0.005;
+        if(difficulty === 3) shootBase = 0.05;
+
+        let isNanAggro = difficulty === 3 && e.x > 800;
+        let finalChance = isNanAggro ? 0.1 : shootBase;
+
+        if(e.id!==4 && (e.id==1 || e.id==3 || difficulty===3) && Math.random() < finalChance * delta) {
+            const eb = new PIXI.Sprite(Assets.tex['B_E']); 
+            eb.anchor.set(0.5); eb.x = e.x-30; eb.y = e.y; 
+            eb.scale.set(getScale(Assets.tex['B_E'], TARGET_SIZES.BULLET_E));
+            eb.blendMode=PIXI.BLEND_MODES.ADD;
+            const dx=player.x-eb.x, dy=player.y-eb.y, d=Math.sqrt(dx*dx+dy*dy);
+            
+            let bSpd = difficulty === 1 ? 5 : 7;
+            eb.vx=(dx/d)*bSpd; eb.vy=(dy/d)*bSpd; ebullets.push(eb); fxLayer.addChild(eb);
+        }
+        
+        let hitB = false;
+        let radius = e.width * 0.4; 
+        for(let j=bullets.length-1; j>=0; j--) {
+            if(hit(bullets[j], e, radius)) { 
+                e.hp -= (player.titan>0?10:1); 
+                createExplosion(bullets[j].x, bullets[j].y, C.W, 0.5);
+                bullets[j].parent.removeChild(bullets[j]); bullets.splice(j,1); 
+                hitB = true; if(e.hp<=0) break;
+            }
+        }
+        if(!hitB && hit(player,e, radius + 20)) {
+            if(player.titan>0) { e.hp=0; score+=500; shake=25; createExplosion(e.x, e.y, C.O, 2); }
+            else if(player.inv<=0) { player.hp-=20; e.hp=0; shake=30; AudioSys.play('boom'); createExplosion(e.x, e.y, C.R, 2); }
+        }
+        if(e.hp<=0) {
+            score+=e.score; AudioSys.play('boom'); createExplosion(e.x, e.y, e.id===3?C.R:C.G, e.id===3?3:1.5);
+            if(Math.random()<0.25) { 
+                let k='ITEM', r=Math.random(); 
+                let type = r<0.1?'GIANT':(r<0.25?'STAR':'WP');
+                if(Assets.tex['ITEM']) {
+                    const it = new PIXI.Sprite(Assets.tex['ITEM']); it.anchor.set(0.5);
+                    it.x=e.x; it.y=e.y; it.type=type; 
+                    it.scale.set(getScale(Assets.tex['ITEM'], TARGET_SIZES.ITEM)); 
+                    it.tint = type==='WP'?C.Y : (type==='STAR'?C.M : C.C);
+                    const beam = new PIXI.Graphics(); beam.beginFill(it.tint, 0.2); beam.drawRect(-4, -600, 8, 1200);
+                    it.addChildAt(beam, 0); it.beam=beam;
+                    items.push(it); gameLayer.addChild(it);
+                }
+            }
+            gameLayer.removeChild(e); enemies.splice(i,1);
+        } else if(e.x<-100) { gameLayer.removeChild(e); enemies.splice(i,1); }
+    }
+    
+    for(let i=ebullets.length-1; i>=0; i--) {
+        let b = ebullets[i]; b.x += b.vx * delta; b.y += b.vy * delta; 
+        if(hit(player, b, 8)) { if(player.inv<=0 && player.titan<=0) { player.hp-=10; shake=20; AudioSys.play('boom'); createExplosion(b.x,b.y,C.R); } b.parent.removeChild(b); ebullets.splice(i,1); }
+        else if(b.x < -50 || b.y < -50 || b.y > 590) { b.parent.removeChild(b); ebullets.splice(i,1); }
+    }
+    
+    for(let i=items.length-1; i>=0; i--) {
+        let it = items[i]; it.x -= 3*speed*delta; 
+        it.y += Math.sin(time*3)*0.5; it.beam.alpha = 0.3 + Math.sin(time*10)*0.2;
+        if(hit(player, it, 40)) {
+            AudioSys.play('power');
+            if(it.type=='WP') { if(player.weapon<3)player.weapon++; else score+=500; }
+            else if(it.type=='STAR') player.inv=300;
+            else if(it.type=='GIANT') { player.titan=300; AudioSys.play('titan'); }
+            gameLayer.removeChild(it); items.splice(i,1);
+        } else if(it.x < -50) { gameLayer.removeChild(it); items.splice(i,1); }
+    }
+    
+    for(let i=particles.length-1; i>=0; i--) {
+        const p = particles[i];
+        if(p.type==='wave') { p.scale.x+=0.1*delta; p.scale.y+=0.1*delta; p.alpha-=0.08*delta; }
+        else if(p.type==='flash') { p.alpha-=0.2*delta; }
+        else { p.x+=p.vx*delta; p.y+=(p.vy||0)*delta; p.rotation+=p.rotationSpeed*delta; p.alpha-=p.decay*delta; }
+        if(p.alpha<=0) { if(p.parent) p.parent.removeChild(p); particles.splice(i,1); }
+    }
+    
+    for(let i=afterImages.length-1; i>=0; i--) {
+        const g = afterImages[i];
+        g.alpha -= 0.05 * delta;
+        g.scale.x += 0.02 * delta; g.scale.y += 0.02 * delta;
+        if(g.alpha <= 0) { g.parent.removeChild(g); afterImages.splice(i,1); }
+    }
+    
+    for(let i=bullets.length-1; i>=0; i--) {
+        let b = bullets[i]; b.x += 25 * delta; b.y += (b.vy||0) * delta;
+        if(b.x > 1000) { b.parent.removeChild(b); bullets.splice(i,1); }
+    }
+
+    if(player.titan>0) player.titan-=delta; if(player.inv>0) player.inv-=delta;
+    document.getElementById('ui-score').innerText = Math.floor(score).toString().padStart(6,'0');
+    document.getElementById('ui-dist').innerText = Math.floor(dist) + ' KM';
+    document.getElementById('ui-bomb').innerText = "☢".repeat(player.bombs);
+    document.getElementById('titan-msg').style.display = player.titan>0?'block':'none';
+    
+    const hpCells = document.querySelectorAll('.hp-seg'); const hpVal = Math.ceil(player.hp/5);
+    hpCells.forEach((c, i) => { 
+        c.className = i < hpVal ? (hpVal<5 ? 'hp-seg on low' : 'hp-seg on') : 'hp-seg'; 
+    });
+
+    if(player.hp<=0) {
+        state='END'; AudioSys.stopBGM();
+        document.getElementById('game-over-screen').style.display='flex';
+        document.getElementById('final-score').innerText = Math.floor(score);
+        const nanMsg = document.getElementById('nan-msg');
+        // 只有模式3显示彩虹字
+        if(difficulty === 3) nanMsg.style.display = 'block'; else nanMsg.style.display = 'none';
+    }
+}
+function hit(a,b,t) { return Math.abs(a.x-b.x)<t && Math.abs(a.y-b.y)<t; }
+window.addEventListener('keydown', e=>{ 
+    keys[e.key]=true; 
+    if(e.key.toLowerCase()=='b' && player.bombs>0 && state==='PLAY'){
+        player.bombs--; AudioSys.play('emp'); flash=0.8; shake=60;
+        enemies.forEach(e => { score+=e.score; createExplosion(e.x,e.y,C.C, 3); gameLayer.removeChild(e); });
+        enemies=[]; ebullets.forEach(b => b.parent.removeChild(b)); ebullets=[];
+    }
+    if(e.key.toLowerCase()=='v') {
+        if(state === 'PLAY') { state = 'PAUSED'; AudioSys.suspend(); document.getElementById('pause-screen').style.display = 'flex'; } 
+        else if (state === 'PAUSED') { state = 'PLAY'; AudioSys.resume(); document.getElementById('pause-screen').style.display = 'none'; }
+    }
+});
+window.addEventListener('keyup', e=>keys[e.key]=false);
+</script>
+</body>
+</html>
