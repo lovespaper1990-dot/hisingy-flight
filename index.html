@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>HISINGY: DESKTOP ULTIMATE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HISINGY: FLAWLESS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
@@ -11,29 +12,31 @@
             margin: 0; background-color: #000; color: #fff;
             font-family: 'Rajdhani', sans-serif;
             height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; user-select: none;
+            overflow: hidden; user-select: none; touch-action: none;
+        }
+
+        #game-wrapper {
+            position: relative; width: 960px; height: 540px;
+            transform-origin: center center;
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
         }
 
         #game-container {
-            position: relative; width: 960px; height: 540px;
-            background: #010103; border: 4px solid #333;
-            box-shadow: 0 0 120px rgba(0, 200, 255, 0.2);
-            overflow: hidden;
+            position: absolute; top:0; left:0; width: 100%; height: 100%;
+            background: #010103; border: 2px solid #333; overflow: hidden;
         }
 
-        /* 顶级画质扫描线 */
         .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px; opacity: 0.8; mix-blend-mode: overlay;
+            background-size: 100% 4px; opacity: 0.6; mix-blend-mode: overlay;
         }
 
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
-        /* UI 布局 */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; padding: 25px; box-sizing: border-box;
+            pointer-events: none; padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column; justify-content: space-between;
             z-index: 60;
         }
@@ -41,75 +44,112 @@
         .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
         
         .hud-panel {
-            background: rgba(0, 10, 20, 0.85); border: 1px solid rgba(0, 255, 255, 0.2);
-            border-top: 3px solid #0ff; padding: 8px 20px;
-            backdrop-filter: blur(6px); transform: skewX(-15deg);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: rgba(0, 10, 20, 0.8); border: 1px solid rgba(0, 255, 255, 0.2);
+            border-top: 3px solid #0ff; padding: 5px 15px;
+            backdrop-filter: blur(4px); transform: skewX(-15deg);
         }
 
-        .label { font-size: 11px; color: #0ff; letter-spacing: 2px; margin-bottom: 2px; font-weight: 800; opacity: 0.8; transform: skewX(15deg); }
-        .value { font-size: 32px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 20px rgba(0,255,255,0.8); }
+        .label { font-size: 10px; color: #0ff; letter-spacing: 2px; margin-bottom: 2px; font-weight: 800; opacity: 0.8; transform: skewX(15deg); }
+        .value { font-size: 24px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
 
         .hp-bar { display: flex; gap: 3px; transform: skewX(15deg); margin-top: 5px; }
-        .hp-seg { width: 10px; height: 16px; background: #112; border: 1px solid #334; transition: 0.1s; }
-        .hp-seg.on { background: #0ff; box-shadow: 0 0 10px #0ff; border-color:#fff; }
-        .hp-seg.low { background: #f05; box-shadow: 0 0 15px #f05; border-color:#fff; animation: blink 0.1s infinite; }
+        .hp-seg { width: 8px; height: 12px; background: #112; border: 1px solid #334; transition: 0.1s; }
+        .hp-seg.on { background: #0ff; box-shadow: 0 0 8px #0ff; border-color:#fff; }
+        .hp-seg.low { background: #f05; box-shadow: 0 0 12px #f05; border-color:#fff; animation: blink 0.1s infinite; }
 
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 8, 0.96); z-index: 100;
+            background: rgba(2, 2, 4, 0.95); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         h1 {
-            font-family: 'Audiowide'; font-size: 80px; color: #fff; margin: 0;
-            text-shadow: 0 0 30px #0ff, 4px 4px 0 #f0f;
+            font-family: 'Audiowide'; font-size: 60px; color: #fff; margin: 0;
+            text-shadow: 0 0 20px #0ff, 3px 3px 0 #f0f;
             letter-spacing: 5px; animation: glitch 3s infinite;
         }
         
         .btn {
             background: transparent; border: 2px solid #fff; color: #fff;
-            font-family: 'Rajdhani'; font-size: 20px; font-weight: 800; padding: 15px 40px;
-            cursor: pointer; margin: 0 15px; transition: 0.2s; position: relative; overflow: hidden;
-            text-transform: uppercase; letter-spacing: 2px; min-width: 140px;
+            font-family: 'Rajdhani'; font-size: 18px; font-weight: 800; padding: 15px 30px;
+            cursor: pointer; margin: 0 10px; transition: 0.2s; position: relative; overflow: hidden;
+            text-transform: uppercase; letter-spacing: 2px; min-width: 100px;
+            pointer-events: auto; display: flex; flex-direction: column; align-items: center;
         }
-        .btn:hover { transform: scale(1.05); }
+        .btn:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
 
-        /* 三色模式按钮 */
-        .btn-easy { border-color: #0f0; color: #0f0; box-shadow: 0 0 20px rgba(0,255,0,0.1); }
-        .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 60px #0f0; }
+        .btn-easy { border-color: #0f0; color: #0f0; }
+        .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 40px #0f0; }
         
-        .btn-norm { border-color: #ff0; color: #ff0; box-shadow: 0 0 20px rgba(255,255,0,0.1); }
-        .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 60px #ff0; }
+        .btn-norm { border-color: #ff0; color: #ff0; }
+        .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 40px #ff0; }
         
-        .btn-nan { border-color: #f00; color: #f00; box-shadow: 0 0 20px rgba(255,0,0,0.1); }
-        .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 80px #f00; }
+        .btn-nan { border-color: #f00; color: #f00; }
+        .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
-        /* 楠模式彩虹字 */
+        /* 调试日志：左上角，初始显示，游戏开始后隐藏 */
+        #debug-log {
+            position: absolute; top: 10px; left: 10px; width: 400px; max-height: 200px;
+            font-size: 10px; color: #fff; font-family: monospace; text-align: left;
+            z-index: 200; pointer-events: none; overflow-y: auto; text-shadow: 1px 1px 0 #000;
+            display: flex; flex-direction: column-reverse;
+        }
+        .log-err { color: #f05; background:rgba(0,0,0,0.5); }
+        .log-ok { color: #0f0; }
+        .log-warn { color: #ff0; }
+
+        #titan-msg {
+            position: absolute; top: 35%; width: 100%; text-align: center;
+            font-size: 100px; color: #fff; font-family: 'Audiowide';
+            text-shadow: 0 0 60px #f05; display: none; z-index: 20; letter-spacing: 10px; 
+            mix-blend-mode: overlay; animation: pulse 0.1s infinite;
+        }
+
         .nan-msg {
-            font-size: 32px; font-weight: bold; margin-bottom: 40px;
+            font-size: 20px; font-weight: bold; margin-bottom: 20px;
             background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
             background-size: 400% 400%; -webkit-background-clip: text; color: transparent;
             animation: rainbow 5s ease infinite; font-family: "Microsoft YaHei", sans-serif;
         }
 
-        #titan-msg {
-            position: absolute; top: 35%; width: 100%; text-align: center;
-            font-size: 120px; color: #fff; font-family: 'Audiowide';
-            text-shadow: 0 0 80px #f05; display: none; z-index: 20; letter-spacing: 15px; 
-            mix-blend-mode: overlay; animation: pulse 0.1s infinite;
+        /* 手机控制器 */
+        #mobile-controls {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 80; pointer-events: none; display: none;
+        }
+        .ctrl-area { position: absolute; bottom: 20px; pointer-events: auto; }
+        #dpad { left: 40px; width: 150px; height: 150px; }
+        .d-btn {
+            position: absolute; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 10px; backdrop-filter: blur(2px);
+        }
+        .d-btn:active { background: rgba(0, 255, 255, 0.4); border-color: #0ff; }
+        #btn-up { top: 0; left: 50px; width: 50px; height: 50px; }
+        #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; }
+        #btn-left { top: 50px; left: 0; width: 50px; height: 50px; }
+        #btn-right { top: 50px; right: 0; width: 50px; height: 50px; }
+        #actions { right: 40px; width: 160px; height: 160px; }
+        .act-btn {
+            position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-family: 'Audiowide'; color: rgba(255,255,255,0.7); backdrop-filter: blur(2px);
+        }
+        #btn-fire { bottom: 10px; right: 0; width: 90px; height: 90px; background: rgba(0,255,255,0.15); border: 3px solid #0ff; font-size: 18px; }
+        #btn-fire:active { background: rgba(0,255,255,0.5); box-shadow: 0 0 20px #0ff; }
+        #btn-bomb { bottom: 60px; left: 0; width: 60px; height: 60px; background: rgba(255,0,85,0.15); border: 3px solid #f05; font-size: 14px; }
+        #btn-bomb:active { background: rgba(255,0,85,0.5); box-shadow: 0 0 20px #f05; }
+        #btn-pause-mobile {
+            position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
+            border: 2px solid #fff; color: #fff; font-size: 12px; display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; background: rgba(0,0,0,0.5); cursor: pointer;
         }
 
-        /* 调试日志：显示在屏幕左上角，防止黑屏懵逼 */
-        #debug-log {
-            position: absolute; top: 10px; left: 10px; width: 400px; height: 300px;
-            pointer-events: none; z-index: 200; font-family: monospace; font-size: 12px;
-            color: #fff; text-shadow: 1px 1px 0 #000; overflow-y: hidden;
-            display: flex; flex-direction: column-reverse; /* 新消息在下 */
+        @media (orientation: portrait) {
+            body::after {
+                content: "ROTATE DEVICE"; position: fixed; top:0; left:0; width:100%; height:100%;
+                background: #000; color: #0ff; z-index: 9999; display: flex; justify-content: center; align-items: center;
+                font-size: 24px; letter-spacing: 5px;
+            }
         }
-        .log-line { margin-bottom: 2px; }
-        .log-err { color: #f05; background: rgba(0,0,0,0.5); }
-        .log-ok { color: #0f0; }
 
         @keyframes glitch { 0%{transform:skew(0deg)} 20%{transform:skew(-5deg)} 22%{transform:skew(5deg)} 24%{transform:skew(0deg)} }
         @keyframes blink { 0%{opacity:1} 50%{opacity:0.2} }
@@ -121,82 +161,95 @@
 </head>
 <body>
 
-<div id="game-container">
-    <div class="scanlines"></div>
-    <div id="game-view"></div>
-    
-    <div id="debug-log"></div>
-
-    <div id="ui-layer">
-        <div class="hud-row">
-            <div class="hud-panel">
-                <div class="label">SHIELD INTEGRITY</div>
-                <div class="hp-bar" id="hp-bar"></div>
-            </div>
-            <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
-                <div class="label" style="color:#f0f;">SCORE</div>
-                <div class="value" id="ui-score">000000</div>
-                <div class="label" style="margin-top:5px; color:#aaa;">DISTANCE</div>
-                <div class="value" style="font-size:18px; color:#aaa;" id="ui-dist">0 KM</div>
-            </div>
-        </div>
-        <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
-            <div class="label" style="color:#f05;">EMP CHARGE</div>
-            <div class="value" style="color:#f05; letter-spacing:5px;" id="ui-bomb">☢☢☢</div>
-        </div>
-    </div>
-
-    <div id="titan-msg">TITAN MODE</div>
-
-    <div id="menu-screen" class="overlay">
-        <h1>HISINGY</h1>
-        <div style="font-size:16px; color:#888; letter-spacing:10px; margin-bottom:40px;">DESKTOP ULTIMATE</div>
-        <div style="display:flex; gap:20px;">
-            <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
-            <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
-            <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
-        </div>
-    </div>
-
-    <div id="loader-screen" class="overlay" style="display:none;">
-        <h1 style="font-size:50px;">SYSTEM BOOT</h1>
-        <div style="color:#888; margin-bottom: 20px;">CONNECTING TO ASSET SERVER...</div>
+<div id="game-wrapper">
+    <div id="game-container">
+        <div class="scanlines"></div>
+        <div id="game-view"></div>
         
-        <div style="width: 400px; height: 4px; background: #333; border-radius: 2px;">
-            <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; box-shadow: 0 0 10px #0f0; transition: width 0.1s;"></div>
+        <div id="debug-log"></div>
+
+        <div id="ui-layer">
+            <div class="hud-row">
+                <div class="hud-panel">
+                    <div class="label">SHIELD</div>
+                    <div class="hp-bar" id="hp-bar"></div>
+                </div>
+                <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
+                    <div class="label" style="color:#f0f;">SCORE</div>
+                    <div class="value" id="ui-score">000000</div>
+                </div>
+            </div>
+            <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
+                <div class="label" style="color:#f05;">EMP</div>
+                <div class="value" style="color:#f05;" id="ui-bomb">☢☢☢</div>
+            </div>
         </div>
 
-        <div id="manual-ui" style="display:none; margin-top:30px; text-align:center;">
-            <p style="color:#f05; font-size:12px;">AUTO-LOAD FAILED (CHECK FILE NAMES)</p>
-            <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
-                MANUAL LOAD
-                <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
-            </button>
+        <div id="titan-msg">TITAN MODE</div>
+
+        <div id="mobile-controls">
+            <div id="btn-pause-mobile" onclick="togglePause()">||</div>
+            <div id="dpad" class="ctrl-area">
+                <div id="btn-up" class="d-btn"></div>
+                <div id="btn-down" class="d-btn"></div>
+                <div id="btn-left" class="d-btn"></div>
+                <div id="btn-right" class="d-btn"></div>
+            </div>
+            <div id="actions" class="ctrl-area">
+                <div id="btn-fire" class="act-btn">FIRE</div>
+                <div id="btn-bomb" class="act-btn">BOMB</div>
+            </div>
         </div>
-        
-        <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:30px; border-color:#0f0; color:#0f0; box-shadow:0 0 40px #0f0;">>>> ENGAGE <<<</button>
-    </div>
 
-    <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
-        <h1 style="font-size:80px; animation:none;">PAUSED</h1>
-        <div style="margin-top:20px; font-size:24px; letter-spacing:2px;">PRESS [V] TO RESUME</div>
-    </div>
+        <div id="menu-screen" class="overlay">
+            <h1>HISINGY</h1>
+            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">FLAWLESS</div>
+            <div style="display:flex; gap:15px;">
+                <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
+                <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
+                <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
+            </div>
+        </div>
 
-    <div id="game-over-screen" class="overlay" style="display:none;">
-        <h1 style="color:#f05; font-size:80px;">CRITICAL FAILURE</h1>
-        <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
-        <div style="font-size:30px; margin-bottom:40px; font-family:'Rajdhani';">FINAL SCORE: <span id="final-score" style="color:#fff;">0</span></div>
-        <button class="btn" onclick="returnToMenu()">REBOOT SYSTEM</button>
+        <div id="loader-screen" class="overlay" style="display:none;">
+            <h1 style="font-size:40px;">LOADING...</h1>
+            <div id="console-log" style="opacity:0.6; margin-bottom:10px;"></div>
+            
+            <div style="width: 400px; height: 4px; background: #333; border-radius: 2px;">
+                <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; box-shadow: 0 0 10px #0f0; transition: width 0.1s;"></div>
+            </div>
+
+            <div id="manual-load-ui" style="display:none; text-align:center; margin-top:20px;">
+                <p style="color:#f05; font-size:12px;">AUTO-LOAD FAILED. USE LOCAL FILES:</p>
+                <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
+                    MANUAL LOAD
+                    <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
+                </button>
+            </div>
+            
+            <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:30px; border-color:#0f0; color:#0f0; box-shadow:0 0 40px #0f0;">>>> LAUNCH <<<</button>
+        </div>
+
+        <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
+            <h1 style="font-size:60px; animation:none;">PAUSED</h1>
+            <div style="margin-top:20px; font-size:20px; cursor:pointer;" onclick="togglePause()">[ RESUME ]</div>
+        </div>
+
+        <div id="game-over-screen" class="overlay" style="display:none;">
+            <h1 style="color:#f05; font-size:60px;">DEFEATED</h1>
+            <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
+            <div style="font-size:24px; margin-bottom:40px;">SCORE: <span id="final-score" style="color:#fff;">0</span></div>
+            <button class="btn" onclick="returnToMenu()">REBOOT</button>
+        </div>
     </div>
 </div>
 
 <script>
 // ==========================================
-// 1. 引擎配置 (高画质)
+// 1. 核心适配与高画质
 // ==========================================
-// 开启高清屏适配
 PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
-PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST; // 像素风格
+PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
 
 const TARGET_SIZES = { P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, ITEM: 48, BULLET_P: 48, BULLET_E: 32 };
@@ -212,10 +265,19 @@ function log(msg, type='ok') {
         d.innerText = `> ${msg}`;
         d.className = type==='err' ? 'log-line log-err' : 'log-line log-ok';
         el.prepend(d);
-        if(el.children.length > 10) el.lastChild.remove();
+        if(el.children.length > 8) el.lastChild.remove();
     }
     console.log(msg);
 }
+
+function resizeGame() {
+    const wrapper = document.getElementById('game-wrapper');
+    const winW = window.innerWidth, winH = window.innerHeight;
+    const scale = Math.min(winW / 960, winH / 540);
+    wrapper.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', resizeGame);
+resizeGame();
 
 function getScale(tex, target) {
     if(!tex) return 1;
@@ -229,7 +291,6 @@ function selectDifficulty(mode) {
         startGame();
     } else {
         document.getElementById('loader-screen').style.display='flex';
-        // 尝试自动加载
         Assets.autoLoad(); 
     }
 }
@@ -239,19 +300,43 @@ function returnToMenu() {
     gameLayer.removeChildren(); fxLayer.removeChildren(); trailLayer.removeChildren();
     document.getElementById('game-over-screen').style.display='none';
     document.getElementById('ui-layer').style.display='none';
+    document.getElementById('mobile-controls').style.display='none';
     document.getElementById('menu-screen').style.display='flex';
 }
 
+function togglePause() {
+    if (state === 'PLAY') { 
+        state = 'PAUSED'; AudioSys.suspend(); 
+        document.getElementById('pause-screen').style.display = 'flex'; 
+    } else if (state === 'PAUSED') { 
+        state = 'PLAY'; AudioSys.resume(); 
+        document.getElementById('pause-screen').style.display = 'none'; 
+    }
+}
+
+function isTouchDevice() { return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)); }
+function initMobileControls() {
+    if(!isTouchDevice()) return;
+    document.getElementById('mobile-controls').style.display = 'block';
+    const bindTouch = (id, key) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+    bindTouch('btn-up', 'ArrowUp'); bindTouch('btn-down', 'ArrowDown');
+    bindTouch('btn-left', 'ArrowLeft'); bindTouch('btn-right', 'ArrowRight');
+    bindTouch('btn-fire', ' '); bindTouch('btn-bomb', 'b');
+}
+
 // ==========================================
-// 2. 资源加载 (GitHub 自动适配)
+// 2. 资源加载器 (已移除子弹/粒子图片依赖)
 // ==========================================
-// 这里的列表必须和 assets 文件夹里的文件名一字不差
 const ASSET_LIST = [
     'player.png','player_up.png','player_down.png','player_titan.png',
     'bg_far.png','bg_mid.png','bg_near.png',
-    'bullet_player.png','bullet_enemy.png','item_box.png','particle.png',
+    'item_box.png',
     'enemy_scout.png','enemy_turret.png','enemy_interceptor.png','enemy_heavy.png','enemy_swarm.png',
-    'shoot.wav','boom.wav','power.wav','titan.wav','emp.wav','bgm.mp3'
+    'shoot.wav','boom.wav','power.wav','titan.wav','emp.wav','bgm.wav'
 ];
 
 const Assets = { tex:{}, snd:{}, 
@@ -271,7 +356,6 @@ const Assets = { tex:{}, snd:{},
                 document.getElementById('loading-bar').style.width = (loaded/total)*100 + '%';
                 if(loaded >= total) {
                     if(failed) {
-                        // 即使有部分失败，也允许进入，使用兜底方块
                         log("PARTIAL LOAD. STARTING...", 'warn');
                         this.finishLoad();
                     } else {
@@ -299,11 +383,11 @@ const Assets = { tex:{}, snd:{},
             }
         });
         
-        // 5秒强制超时保护
+        // 5秒强制超时
         setTimeout(() => {
             if(!assetsReady) {
                 log("TIMEOUT. SHOWING MANUAL.", 'err');
-                document.getElementById('manual-ui').style.display = 'block';
+                document.getElementById('manual-load-ui').style.display = 'block';
             }
         }, 5000);
     },
@@ -311,7 +395,7 @@ const Assets = { tex:{}, snd:{},
     // 手动加载
     manualLoad(files) {
         let cnt=0;
-        document.getElementById('manual-ui').style.display='none';
+        document.getElementById('manual-load-ui').style.display='none';
         log(`MANUAL LOAD: ${files.length}`);
         Array.from(files).forEach(f => {
             const url = URL.createObjectURL(f);
@@ -329,7 +413,7 @@ const Assets = { tex:{}, snd:{},
     finishLoad() {
         assetsReady = true;
         log("SYSTEM READY.", 'ok');
-        setTimeout(()=>startGame(), 500);
+        document.getElementById('start-btn').style.display='inline-block';
     },
 
     process(name, data, isImg) {
@@ -342,15 +426,12 @@ const Assets = { tex:{}, snd:{},
             else if(n.includes('bg_far')) this.tex['BG_FAR'] = data;
             else if(n.includes('bg_mid')) this.tex['BG_MID'] = data;
             else if(n.includes('bg_near')) this.tex['BG_NEAR'] = data;
-            else if(n.includes('bullet_player')) this.tex['B_P'] = data;
-            else if(n.includes('bullet_enemy')) this.tex['B_E'] = data;
             else if(n.includes('scout')) this.tex['E0'] = data;
             else if(n.includes('turret')) this.tex['E1'] = data;
             else if(n.includes('interceptor')) this.tex['E2'] = data;
             else if(n.includes('heavy')) this.tex['E3'] = data;
             else if(n.includes('swarm')) this.tex['E4'] = data;
-            else if(n.includes('item')) this.tex['ITEM'] = data;
-            else if(n.includes('particle')) this.tex['PART'] = data;
+            else if(n.includes('item_box')) this.tex['ITEM'] = data;
         } else {
             if(n.includes('shoot')) AudioSys.bufs['shoot']=data;
             else if(n.includes('boom')) AudioSys.bufs['boom']=data;
@@ -378,7 +459,7 @@ const AudioSys = {
 };
 
 // ==========================================
-// 3. 程序化美术 (Fallback)
+// 3. 兜底美术 (Procedural)
 // ==========================================
 function createGlowingBullet(color, isEnemy) {
     const g = new PIXI.Graphics();
@@ -398,8 +479,10 @@ function initDefaults() {
     if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
     if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
     if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
-    if(!Assets.tex['B_P']) Assets.tex['B_P'] = createGlowingBullet(C.C, false);
-    if(!Assets.tex['B_E']) Assets.tex['B_E'] = createGlowingBullet(C.R, true);
+    // 强制使用代码生成的子弹，不再依赖图片
+    Assets.tex['B_P'] = createGlowingBullet(C.C, false);
+    Assets.tex['B_E'] = createGlowingBullet(C.R, true);
+    
     if(!Assets.tex['ITEM']) Assets.tex['ITEM'] = createRectTex(30,30,C.Y);
     const cols = [C.G, C.R, C.C, C.O, C.M];
     for(let i=0;i<5;i++) if(!Assets.tex['E'+i]) Assets.tex['E'+i] = createRectTex(40,40,cols[i]);
@@ -439,6 +522,8 @@ window.onload = function() {
     const hpCon = document.getElementById('hp-bar');
     for(let i=0; i<20; i++) { hpCon.appendChild(document.createElement('div')).className = 'hp-seg on'; }
     app.ticker.add(loop);
+    
+    if(isTouchDevice()) initMobileControls();
 };
 
 function createParallax() {
@@ -462,9 +547,13 @@ function createParallax() {
 }
 
 function startGame() {
+    // 隐藏调试日志
+    document.getElementById('debug-log').style.display = 'none';
+    
     AudioSys.ctx.resume(); AudioSys.play('bgm', true);
     document.getElementById('loader-screen').style.display='none';
     document.getElementById('ui-layer').style.display='flex';
+    if(isTouchDevice()) document.getElementById('mobile-controls').style.display='block';
     initDefaults(); 
     resetGame();
 }
@@ -497,6 +586,7 @@ function spawnEnemy() {
     if(difficulty === 1) baseSpawn = 0.008;
     if(difficulty === 3) baseSpawn = 0.038; 
 
+    // Frame-rate independence fix
     if(Math.random() >= baseSpawn * speed * (app.ticker.deltaMS/16.6)) return;
 
     const id = Math.floor(Math.random()*5);
@@ -754,6 +844,7 @@ function loop(delta) {
         document.getElementById('final-score').innerText = Math.floor(score);
         const nanMsg = document.getElementById('nan-msg');
         if(difficulty === 3) nanMsg.style.display = 'block'; else nanMsg.style.display = 'none';
+        if(isTouchDevice()) document.getElementById('mobile-controls').style.display='none';
     }
 }
 function hit(a,b,t) { return Math.abs(a.x-b.x)<t && Math.abs(a.y-b.y)<t; }
@@ -764,10 +855,7 @@ window.addEventListener('keydown', e=>{
         enemies.forEach(e => { score+=e.score; createExplosion(e.x,e.y,C.C, 3); gameLayer.removeChild(e); });
         enemies=[]; ebullets.forEach(b => b.parent.removeChild(b)); ebullets=[];
     }
-    if(e.key.toLowerCase()=='v') {
-        if(state === 'PLAY') { state = 'PAUSED'; AudioSys.suspend(); document.getElementById('pause-screen').style.display = 'flex'; } 
-        else if (state === 'PAUSED') { state = 'PLAY'; AudioSys.resume(); document.getElementById('pause-screen').style.display = 'none'; }
-    }
+    if(e.key.toLowerCase()=='v') { togglePause(); }
 });
 window.addEventListener('keyup', e=>keys[e.key]=false);
 </script>
