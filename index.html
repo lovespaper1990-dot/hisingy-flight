@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HISINGY: STABLE OVERDRIVE</title>
+    <title>HISINGY: RESTORED</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
@@ -12,7 +12,7 @@
             margin: 0; background-color: #000; color: #fff;
             font-family: 'Rajdhani', sans-serif;
             height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; user-select: none; touch-action: none;
+            overflow: hidden; user-select: none;
         }
 
         #game-wrapper {
@@ -29,14 +29,14 @@
         .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px; opacity: 0.7; mix-blend-mode: overlay;
+            background-size: 100% 4px; opacity: 0.8; mix-blend-mode: overlay;
         }
 
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; padding: 20px; box-sizing: border-box;
+            pointer-events: none; padding: 25px; box-sizing: border-box;
             display: flex; flex-direction: column; justify-content: space-between;
             z-index: 60;
         }
@@ -45,15 +45,16 @@
         
         .hud-panel {
             background: rgba(0, 5, 10, 0.7); border: 1px solid rgba(0, 255, 255, 0.1);
-            border-top: 3px solid #0ff; padding: 5px 15px;
+            border-top: 3px solid #0ff; padding: 10px 20px;
             backdrop-filter: blur(4px); transform: skewX(-15deg);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
         }
 
         .label { font-size: 10px; color: #0ff; letter-spacing: 2px; margin-bottom: 2px; font-weight: 800; opacity: 0.8; transform: skewX(15deg); }
-        .value { font-size: 24px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
+        .value { font-size: 32px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
 
         .hp-bar { display: flex; gap: 3px; transform: skewX(15deg); margin-top: 5px; }
-        .hp-seg { width: 8px; height: 12px; background: #112; border: 1px solid #334; transition: 0.1s; }
+        .hp-seg { width: 8px; height: 14px; background: #112; border: 1px solid #334; transition: 0.1s; }
         .hp-seg.on { background: #0ff; box-shadow: 0 0 8px #0ff; border-color:#fff; }
         .hp-seg.low { background: #f05; box-shadow: 0 0 12px #f05; border-color:#fff; animation: blink 0.1s infinite; }
 
@@ -64,88 +65,53 @@
         }
 
         h1 {
-            font-family: 'Audiowide'; font-size: 60px; color: #fff; margin: 0;
+            font-family: 'Audiowide'; font-size: 70px; color: #fff; margin: 0;
             text-shadow: 0 0 20px #0ff, 3px 3px 0 #f0f;
             letter-spacing: 5px; animation: glitch 3s infinite;
         }
         
         .btn {
-            background: transparent; border: 2px solid #fff; color: #fff;
-            font-family: 'Rajdhani'; font-size: 18px; font-weight: 800; padding: 15px 30px;
-            cursor: pointer; margin: 0 10px; transition: 0.2s; position: relative; overflow: hidden;
-            text-transform: uppercase; letter-spacing: 2px; min-width: 100px;
-            pointer-events: auto; display: flex; flex-direction: column; align-items: center;
+            background: transparent; border: 2px solid #0ff; color: #0ff;
+            font-family: 'Rajdhani'; font-size: 20px; font-weight: 800; padding: 15px 50px;
+            cursor: pointer; margin: 0 15px; transition: 0.2s; position: relative; overflow: hidden;
+            text-transform: uppercase; letter-spacing: 3px; min-width: 120px;
         }
-        .btn:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
+        .btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
 
+        /* 三色模式 */
         .btn-easy { border-color: #0f0; color: #0f0; }
         .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 40px #0f0; }
+        
         .btn-norm { border-color: #ff0; color: #ff0; }
         .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 40px #ff0; }
+        
         .btn-nan { border-color: #f00; color: #f00; }
         .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
+        /* 调试日志：左上角 */
         #console-log {
-            position: absolute; top:10px; left:10px; width: 400px; height: 150px; 
-            font-size: 11px; color: #fff; font-family: monospace; text-align: left;
-            z-index: 200; pointer-events: none; overflow-y: hidden; 
-            display: flex; flex-direction: column-reverse; text-shadow: 1px 1px 0 #000;
+            position: absolute; top: 10px; left: 10px; width: 400px; height: 150px; 
+            background: transparent; padding: 10px; font-size: 11px; color: #fff; 
+            font-family: monospace; text-align: left; z-index: 200; pointer-events: none;
+            overflow: hidden; display: flex; flex-direction: column-reverse;
+            text-shadow: 1px 1px 0 #000;
         }
         .log-line { margin-bottom: 2px; }
-        .log-err { color: #f05; background:rgba(0,0,0,0.5); }
+        .log-err { color: #f05; background: rgba(0,0,0,0.5); }
         .log-ok { color: #0f0; }
 
         #titan-msg {
             position: absolute; top: 35%; width: 100%; text-align: center;
-            font-size: 100px; color: #fff; font-family: 'Audiowide';
+            font-size: 120px; color: #fff; font-family: 'Audiowide';
             text-shadow: 0 0 60px #f05; display: none; z-index: 20; letter-spacing: 10px; 
             mix-blend-mode: overlay; animation: pulse 0.1s infinite;
         }
 
         .nan-msg {
-            font-size: 20px; font-weight: bold; margin-bottom: 20px;
+            font-size: 28px; font-weight: bold; margin-bottom: 30px;
             background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
             background-size: 400% 400%; -webkit-background-clip: text; color: transparent;
             animation: rainbow 5s ease infinite; font-family: "Microsoft YaHei", sans-serif;
-        }
-
-        /* 手机控制器 */
-        #mobile-controls {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 80; pointer-events: none; display: none;
-        }
-        .ctrl-area { position: absolute; bottom: 20px; pointer-events: auto; }
-        #dpad { left: 40px; width: 150px; height: 150px; }
-        .d-btn {
-            position: absolute; background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 10px; backdrop-filter: blur(2px);
-        }
-        .d-btn:active { background: rgba(0, 255, 255, 0.4); border-color: #0ff; }
-        #btn-up { top: 0; left: 50px; width: 50px; height: 50px; }
-        #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; }
-        #btn-left { top: 50px; left: 0; width: 50px; height: 50px; }
-        #btn-right { top: 50px; right: 0; width: 50px; height: 50px; }
-        #actions { right: 40px; width: 160px; height: 160px; }
-        .act-btn {
-            position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-family: 'Audiowide'; color: rgba(255,255,255,0.7); backdrop-filter: blur(2px);
-        }
-        #btn-fire { bottom: 10px; right: 0; width: 90px; height: 90px; background: rgba(0,255,255,0.15); border: 3px solid #0ff; font-size: 18px; }
-        #btn-fire:active { background: rgba(0,255,255,0.5); box-shadow: 0 0 20px #0ff; }
-        #btn-bomb { bottom: 60px; left: 0; width: 60px; height: 60px; background: rgba(255,0,85,0.15); border: 3px solid #f05; font-size: 14px; }
-        #btn-bomb:active { background: rgba(255,0,85,0.5); box-shadow: 0 0 20px #f05; }
-        #btn-pause-mobile {
-            position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
-            border: 2px solid #fff; color: #fff; font-size: 12px; display: flex; justify-content: center; align-items: center;
-            pointer-events: auto; background: rgba(0,0,0,0.5); cursor: pointer;
-        }
-
-        @media (orientation: portrait) {
-            body::after {
-                content: "ROTATE DEVICE"; position: fixed; top:0; left:0; width:100%; height:100%;
-                background: #000; color: #0ff; z-index: 9999; display: flex; justify-content: center; align-items: center;
-                font-size: 24px; letter-spacing: 5px;
-            }
         }
 
         @keyframes glitch { 0%{transform:skew(0deg)} 20%{transform:skew(-5deg)} 22%{transform:skew(5deg)} 24%{transform:skew(0deg)} }
@@ -153,7 +119,7 @@
         @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} }
         @keyframes rainbow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.8/browser/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
 </head>
 <body>
@@ -163,7 +129,7 @@
         <div class="scanlines"></div>
         <div id="game-view"></div>
         
-        <div id="debug-log"></div>
+        <div id="console-log"></div>
 
         <div id="ui-layer">
             <div class="hud-row">
@@ -174,34 +140,22 @@
                 <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
                     <div class="label" style="color:#f0f;">SCORE</div>
                     <div class="value" id="ui-score">000000</div>
+                    <div class="label" style="margin-top:5px; color:#aaa;">DISTANCE</div>
+                    <div class="value" style="font-size:18px; color:#aaa;" id="ui-dist">0 KM</div>
                 </div>
             </div>
             <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
                 <div class="label" style="color:#f05;">EMP</div>
-                <div class="value" style="color:#f05;" id="ui-bomb">☢☢☢</div>
+                <div class="value" style="color:#f05; letter-spacing:5px;" id="ui-bomb">☢☢☢</div>
             </div>
         </div>
 
         <div id="titan-msg">TITAN MODE</div>
 
-        <div id="mobile-controls">
-            <div id="btn-pause-mobile" onclick="togglePause()">||</div>
-            <div id="dpad" class="ctrl-area">
-                <div id="btn-up" class="d-btn"></div>
-                <div id="btn-down" class="d-btn"></div>
-                <div id="btn-left" class="d-btn"></div>
-                <div id="btn-right" class="d-btn"></div>
-            </div>
-            <div id="actions" class="ctrl-area">
-                <div id="btn-fire" class="act-btn">FIRE</div>
-                <div id="btn-bomb" class="act-btn">BOMB</div>
-            </div>
-        </div>
-
         <div id="menu-screen" class="overlay">
             <h1>HISINGY</h1>
-            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">STABLE OVERDRIVE</div>
-            <div style="display:flex; gap:15px;">
+            <div style="font-size:16px; color:#888; letter-spacing:10px; margin-bottom:40px;">RESTORED</div>
+            <div style="display:flex; gap:20px;">
                 <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
                 <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
                 <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
@@ -209,31 +163,32 @@
         </div>
 
         <div id="loader-screen" class="overlay" style="display:none;">
-            <h1 style="font-size:40px;">LOADING...</h1>
-            <div style="width: 400px; height: 4px; background: #333; border-radius: 2px;">
-                <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; box-shadow: 0 0 10px #0f0; transition: width 0.1s;"></div>
-            </div>
-
-            <div id="manual-load-ui" style="display:none; text-align:center; margin-top:20px;">
-                <p style="color:#f05; font-size:12px; margin-bottom:10px;">AUTO-LOAD FAILED (CHECK FILENAMES)</p>
+            <h1 style="font-size:50px;">LOADING...</h1>
+            <div id="load-status" style="color:#888; margin-bottom:20px;">CONNECTING</div>
+            
+            <div id="manual-load-ui" style="display:none; text-align:center;">
+                <p style="color:#f05; font-size:12px; margin-bottom:10px;">AUTO-LOAD FAILED</p>
                 <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
                     MANUAL LOAD
                     <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
                 </button>
             </div>
             
-            <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:30px; border-color:#0f0; color:#0f0; box-shadow:0 0 40px #0f0;">>>> LAUNCH <<<</button>
+            <div style="width: 400px; height: 4px; background: #333;">
+                <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.1s;"></div>
+            </div>
+            <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:30px; border-color:#0f0; color:#0f0; box-shadow:0 0 30px #0f0;">>>> START <<<</button>
         </div>
 
         <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
-            <h1 style="font-size:60px; animation:none;">PAUSED</h1>
-            <div style="margin-top:20px; font-size:20px; cursor:pointer;" onclick="togglePause()">[ RESUME ]</div>
+            <h1 style="font-size:80px; animation:none;">PAUSED</h1>
+            <div style="margin-top:20px; font-size:24px; letter-spacing:2px;">PRESS [V] TO RESUME</div>
         </div>
 
         <div id="game-over-screen" class="overlay" style="display:none;">
-            <h1 style="color:#f05; font-size:60px;">DEFEATED</h1>
+            <h1 style="color:#f05; font-size:80px;">DEFEATED</h1>
             <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
-            <div style="font-size:24px; margin-bottom:40px;">SCORE: <span id="final-score" style="color:#fff;">0</span></div>
+            <div style="font-size:30px; margin-bottom:40px;">SCORE: <span id="final-score" style="color:#fff;">0</span></div>
             <button class="btn" onclick="returnToMenu()">REBOOT</button>
         </div>
     </div>
@@ -241,10 +196,8 @@
 
 <script>
 // ==========================================
-// 1. 核心适配与高画质
+// 1. 配置 & 适配
 // ==========================================
-// 开启高清屏适配
-PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
 
@@ -253,9 +206,8 @@ const C = { C:0x00FFFF, M:0xFF00FF, Y:0xFFFF00, R:0xFF3333, G:0x39FF14, O:0xFFA5
 let difficulty = 2;
 let assetsReady = false; 
 
-// 调试日志
 function log(msg, type='ok') {
-    const el = document.getElementById('debug-log');
+    const el = document.getElementById('console-log');
     if(el) {
         const d = document.createElement('div');
         d.innerText = `> ${msg}`;
@@ -263,7 +215,6 @@ function log(msg, type='ok') {
         el.prepend(d);
         if(el.children.length > 8) el.lastChild.remove();
     }
-    console.log(msg);
 }
 
 function resizeGame() {
@@ -296,7 +247,6 @@ function returnToMenu() {
     gameLayer.removeChildren(); fxLayer.removeChildren(); trailLayer.removeChildren();
     document.getElementById('game-over-screen').style.display='none';
     document.getElementById('ui-layer').style.display='none';
-    document.getElementById('mobile-controls').style.display='none';
     document.getElementById('menu-screen').style.display='flex';
 }
 
@@ -310,37 +260,20 @@ function togglePause() {
     }
 }
 
-function isTouchDevice() { return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)); }
-function initMobileControls() {
-    if(!isTouchDevice()) return;
-    document.getElementById('mobile-controls').style.display = 'block';
-    const bindTouch = (id, key) => {
-        const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-    };
-    bindTouch('btn-up', 'ArrowUp'); bindTouch('btn-down', 'ArrowDown');
-    bindTouch('btn-left', 'ArrowLeft'); bindTouch('btn-right', 'ArrowRight');
-    bindTouch('btn-fire', ' '); bindTouch('btn-bomb', 'b');
-}
-
 // ==========================================
-// 2. 资源加载器 (GitHub 自动适配)
+// 2. 资源加载 (剔除子弹/粒子图片)
 // ==========================================
-// 请确保 GitHub assets 文件夹中文件名全小写，bgm.wav
 const ASSET_LIST = [
     'player.png','player_up.png','player_down.png','player_titan.png',
     'bg_far.png','bg_mid.png','bg_near.png',
-    'item_box.png',
+    'item_box.png', // 只保留必须的图
     'enemy_scout.png','enemy_turret.png','enemy_interceptor.png','enemy_heavy.png','enemy_swarm.png',
-    'shoot.wav','boom.wav','power.wav','titan.wav','emp.wav','bgm.wav'
+    'shoot.wav','boom.wav','power.wav','titan.wav','emp.wav','bgm.wav' // bgm 已改 wav
 ];
 
 const Assets = { tex:{}, snd:{}, 
-    
-    // 自动加载
     autoLoad() {
-        log("CONNECTING...");
+        log("AUTO-LOADING...");
         let loaded = 0, total = ASSET_LIST.length;
         let failed = false;
 
@@ -348,17 +281,10 @@ const Assets = { tex:{}, snd:{},
             const path = `assets/${file}`;
             const isImg = file.endsWith('.png');
             
-            const onDone = (success) => {
+            const onDone = () => {
                 loaded++;
                 document.getElementById('loading-bar').style.width = (loaded/total)*100 + '%';
-                if(loaded >= total) {
-                    if(failed) {
-                        log("PARTIAL LOAD. STARTING...", 'warn');
-                        this.finishLoad();
-                    } else {
-                        this.finishLoad();
-                    }
-                }
+                if(loaded >= total) this.finishLoad(failed);
             };
 
             if(isImg) {
@@ -366,11 +292,7 @@ const Assets = { tex:{}, snd:{},
                     if(t.width > 1) { this.process(file, t, true); log(`OK: ${file}`); } 
                     else { log(`EMPTY: ${file}`, 'err'); failed=true; }
                     onDone();
-                }).catch(() => {
-                    log(`MISSING: ${file}`, 'err');
-                    failed = true;
-                    onDone();
-                });
+                }).catch(() => { log(`MISSING: ${file}`, 'err'); failed=true; onDone(); });
             } else {
                 fetch(path).then(r=>{if(r.ok)return r.arrayBuffer();throw 404;})
                 .then(buf=>AudioSys.ctx.decodeAudioData(buf, b=>{
@@ -380,20 +302,15 @@ const Assets = { tex:{}, snd:{},
             }
         });
         
-        // 5秒强制超时
         setTimeout(() => {
-            if(!assetsReady) {
-                log("TIMEOUT. MANUAL?", 'err');
-                document.getElementById('manual-load-ui').style.display = 'block';
-            }
-        }, 5000);
+            if(!assetsReady) { log("TIMEOUT.", 'err'); this.finishLoad(true); }
+        }, 3000);
     },
 
-    // 手动加载
     manualLoad(files) {
         let cnt=0;
         document.getElementById('manual-load-ui').style.display='none';
-        log(`MANUAL LOAD: ${files.length}`);
+        log(`MANUAL: ${files.length} FILES`);
         Array.from(files).forEach(f => {
             const url = URL.createObjectURL(f);
             if(f.name.endsWith('.png')) {
@@ -404,13 +321,20 @@ const Assets = { tex:{}, snd:{},
                 r.readAsArrayBuffer(f);
             } else check();
         });
-        const check = () => { cnt++; if(cnt>=files.length) this.finishLoad(); };
+        const check = () => { cnt++; if(cnt>=files.length) this.finishLoad(false); };
     },
 
-    finishLoad() {
+    finishLoad(hasError) {
+        if(assetsReady) return;
         assetsReady = true;
-        log("SYSTEM READY.", 'ok');
-        document.getElementById('start-btn').style.display='inline-block';
+        if(hasError) {
+            log("PARTIAL LOAD. FORCE START.", 'warn');
+            document.getElementById('manual-load-ui').style.display='block'; // 仍然显示手动作为备选
+            document.getElementById('start-btn').style.display='inline-block'; // 允许强制开始
+        } else {
+            log("READY.", 'ok');
+            document.getElementById('start-btn').style.display='inline-block';
+        }
     },
 
     process(name, data, isImg) {
@@ -456,7 +380,7 @@ const AudioSys = {
 };
 
 // ==========================================
-// 3. 兜底美术 (Procedural)
+// 3. 高级绘制 (Code Generated Assets)
 // ==========================================
 function createGlowingBullet(color, isEnemy) {
     const g = new PIXI.Graphics();
@@ -473,11 +397,14 @@ function createRectTex(w,h,c) {
     return app.renderer.generateTexture(g);
 }
 function initDefaults() {
+    // 强制使用代码子弹 (不再需要图片)
+    Assets.tex['B_P'] = createGlowingBullet(C.C, false);
+    Assets.tex['B_E'] = createGlowingBullet(C.R, true);
+    
+    // 兜底图片
     if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
     if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
     if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
-    if(!Assets.tex['B_P']) Assets.tex['B_P'] = createGlowingBullet(C.C, false);
-    if(!Assets.tex['B_E']) Assets.tex['B_E'] = createGlowingBullet(C.R, true);
     if(!Assets.tex['ITEM']) Assets.tex['ITEM'] = createRectTex(30,30,C.Y);
     const cols = [C.G, C.R, C.C, C.O, C.M];
     for(let i=0;i<5;i++) if(!Assets.tex['E'+i]) Assets.tex['E'+i] = createRectTex(40,40,cols[i]);
@@ -504,7 +431,6 @@ window.onload = function() {
     gameLayer = new PIXI.Container(); stage.addChild(gameLayer);
     fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
     
-    // 特效安全加载 (Try-Catch)
     try { 
         if(PIXI.filters) {
             bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5});
@@ -512,14 +438,12 @@ window.onload = function() {
             rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0};
             stage.filters = [bloomFilter, rgbSplit];
         }
-    } catch(e){ log("FILTERS FAILED.", 'err'); }
+    } catch(e){}
     
     initDefaults();
     const hpCon = document.getElementById('hp-bar');
     for(let i=0; i<20; i++) { hpCon.appendChild(document.createElement('div')).className = 'hp-seg on'; }
     app.ticker.add(loop);
-    
-    if(isTouchDevice()) initMobileControls();
 };
 
 function createParallax() {
@@ -543,11 +467,12 @@ function createParallax() {
 }
 
 function startGame() {
-    document.getElementById('debug-log').style.display='none';
+    // 隐藏调试日志
+    document.getElementById('console-log').style.display = 'none';
+    
     AudioSys.ctx.resume(); AudioSys.play('bgm', true);
     document.getElementById('loader-screen').style.display='none';
     document.getElementById('ui-layer').style.display='flex';
-    if(isTouchDevice()) document.getElementById('mobile-controls').style.display='block';
     initDefaults(); 
     resetGame();
 }
@@ -580,7 +505,6 @@ function spawnEnemy() {
     if(difficulty === 1) baseSpawn = 0.008;
     if(difficulty === 3) baseSpawn = 0.038; 
 
-    // Frame-rate independence fix
     if(Math.random() >= baseSpawn * speed * (app.ticker.deltaMS/16.6)) return;
 
     const id = Math.floor(Math.random()*5);
@@ -625,8 +549,8 @@ function createExplosion(x, y, color, size=1) {
     const count = 16 * size;
     for(let i=0; i<count; i++) {
         let p;
-        if(Assets.tex['PART']) { p = new PIXI.Sprite(Assets.tex['PART']); p.tint=color; p.anchor.set(0.5); }
-        else { p = new PIXI.Graphics(); p.beginFill(color); p.drawRect(-2,-2,4,4); }
+        // 粒子也可以不依赖图片，直接用方块
+        p = new PIXI.Graphics(); p.beginFill(color); p.drawRect(-2,-2,4,4);
         p.x=x; p.y=y;
         const a = Math.random()*6.28; const s = Math.random()*10+2;
         p.vx = Math.cos(a)*s; p.vy = Math.sin(a)*s;
@@ -717,6 +641,7 @@ function loop(delta) {
         player.cd=8; AudioSys.play('shoot');
     }
     
+    // Trail
     const p = new PIXI.Graphics();
     p.beginFill(player.titan>0 ? C.O : C.C); p.drawRect(0,0,4,4);
     p.x=player.x - 30 * player.scale.x; p.y=player.y+(Math.random()-0.5)*10;
@@ -838,7 +763,6 @@ function loop(delta) {
         document.getElementById('final-score').innerText = Math.floor(score);
         const nanMsg = document.getElementById('nan-msg');
         if(difficulty === 3) nanMsg.style.display = 'block'; else nanMsg.style.display = 'none';
-        if(isTouchDevice()) document.getElementById('mobile-controls').style.display='none';
     }
 }
 function hit(a,b,t) { return Math.abs(a.x-b.x)<t && Math.abs(a.y-b.y)<t; }
