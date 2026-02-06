@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>HISINGY: FINAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HISINGY: ONLINE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
@@ -11,14 +12,18 @@
             margin: 0; background-color: #000; color: #fff;
             font-family: 'Rajdhani', sans-serif;
             height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; user-select: none;
+            overflow: hidden; user-select: none; touch-action: none;
+        }
+
+        #game-wrapper {
+            position: relative; width: 960px; height: 540px;
+            transform-origin: center center;
+            box-shadow: 0 0 80px rgba(0, 200, 255, 0.15);
         }
 
         #game-container {
-            position: relative; width: 960px; height: 540px;
-            background: #010103; border: 2px solid #222;
-            box-shadow: 0 0 150px rgba(0, 100, 255, 0.2);
-            overflow: hidden;
+            position: absolute; top:0; left:0; width: 100%; height: 100%;
+            background: #010103; border: 2px solid #222; overflow: hidden;
         }
 
         .scanlines {
@@ -31,7 +36,7 @@
 
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; padding: 25px; box-sizing: border-box;
+            pointer-events: none; padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column; justify-content: space-between;
             z-index: 60;
         }
@@ -40,16 +45,15 @@
         
         .hud-panel {
             background: rgba(0, 5, 10, 0.7); border: 1px solid rgba(0, 255, 255, 0.1);
-            border-top: 3px solid #0ff; padding: 10px 20px;
+            border-top: 3px solid #0ff; padding: 5px 15px;
             backdrop-filter: blur(4px); transform: skewX(-15deg);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
         }
 
         .label { font-size: 10px; color: #0ff; letter-spacing: 2px; margin-bottom: 2px; font-weight: 800; opacity: 0.8; transform: skewX(15deg); }
-        .value { font-size: 32px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
+        .value { font-size: 24px; line-height: 1; color: #fff; font-family: 'Audiowide'; transform: skewX(15deg); text-shadow: 0 0 15px rgba(0,255,255,0.6); }
 
         .hp-bar { display: flex; gap: 3px; transform: skewX(15deg); margin-top: 5px; }
-        .hp-seg { width: 8px; height: 14px; background: #112; border: 1px solid #334; transition: 0.1s; }
+        .hp-seg { width: 8px; height: 12px; background: #112; border: 1px solid #334; transition: 0.1s; }
         .hp-seg.on { background: #0ff; box-shadow: 0 0 8px #0ff; border-color:#fff; }
         .hp-seg.low { background: #f05; box-shadow: 0 0 12px #f05; border-color:#fff; animation: blink 0.1s infinite; }
 
@@ -60,40 +64,29 @@
         }
 
         h1 {
-            font-family: 'Audiowide'; font-size: 70px; color: #fff; margin: 0;
+            font-family: 'Audiowide'; font-size: 60px; color: #fff; margin: 0;
             text-shadow: 0 0 20px #0ff, 3px 3px 0 #f0f;
             letter-spacing: 5px; animation: glitch 3s infinite;
         }
         
-        /* 按钮基础样式 */
         .btn {
             background: transparent; border: 2px solid #fff; color: #fff;
-            font-family: 'Rajdhani'; font-size: 20px; font-weight: 800; padding: 15px 40px;
-            cursor: pointer; margin: 0 15px; transition: 0.2s; position: relative; overflow: hidden;
-            text-transform: uppercase; letter-spacing: 2px; min-width: 120px;
+            font-family: 'Rajdhani'; font-size: 18px; font-weight: 800; padding: 15px 30px;
+            cursor: pointer; margin: 0 10px; transition: 0.2s; position: relative; overflow: hidden;
+            text-transform: uppercase; letter-spacing: 2px; min-width: 100px;
+            pointer-events: auto; display: flex; flex-direction: column; align-items: center;
         }
-        .btn:hover { transform: scale(1.05); }
+        .btn:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
 
-        /* 1. EASY - 绿色 */
-        .btn-easy { border-color: #0f0; color: #0f0; box-shadow: 0 0 15px rgba(0,255,0,0.2); }
-        .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 50px #0f0; }
-
-        /* 2. NORMAL - 黄色 */
-        .btn-norm { border-color: #ff0; color: #ff0; box-shadow: 0 0 15px rgba(255,255,0,0.2); }
-        .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 50px #ff0; }
-
-        /* 3. NAN MODE - 红色 */
-        .btn-nan { border-color: #f00; color: #f00; box-shadow: 0 0 15px rgba(255,0,0,0.2); }
-        .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 60px #f00; }
-
-        .nan-msg {
-            font-size: 28px; font-weight: bold; margin-bottom: 30px;
-            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
-            background-size: 400% 400%;
-            -webkit-background-clip: text; color: transparent;
-            animation: rainbow 5s ease infinite;
-            font-family: "Microsoft YaHei", sans-serif;
-        }
+        /* 红绿灯配色 */
+        .btn-easy { border-color: #0f0; color: #0f0; }
+        .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 40px #0f0; }
+        
+        .btn-norm { border-color: #ff0; color: #ff0; }
+        .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 40px #ff0; }
+        
+        .btn-nan { border-color: #f00; color: #f00; }
+        .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
         #console-log {
             width: 500px; height: 100px; background: #000; border: 1px solid #333;
@@ -103,9 +96,55 @@
 
         #titan-msg {
             position: absolute; top: 35%; width: 100%; text-align: center;
-            font-size: 120px; color: #fff; font-family: 'Audiowide';
+            font-size: 100px; color: #fff; font-family: 'Audiowide';
             text-shadow: 0 0 60px #f05; display: none; z-index: 20; letter-spacing: 10px; 
             mix-blend-mode: overlay; animation: pulse 0.1s infinite;
+        }
+
+        .nan-msg {
+            font-size: 20px; font-weight: bold; margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            background-size: 400% 400%; -webkit-background-clip: text; color: transparent;
+            animation: rainbow 5s ease infinite; font-family: "Microsoft YaHei", sans-serif;
+        }
+
+        /* 手机控制器 */
+        #mobile-controls {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 80; pointer-events: none; display: none;
+        }
+        .ctrl-area { position: absolute; bottom: 20px; pointer-events: auto; }
+        #dpad { left: 40px; width: 150px; height: 150px; }
+        .d-btn {
+            position: absolute; background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 10px; backdrop-filter: blur(2px);
+        }
+        .d-btn:active { background: rgba(0, 255, 255, 0.5); border-color: #0ff; }
+        #btn-up { top: 0; left: 50px; width: 50px; height: 50px; }
+        #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; }
+        #btn-left { top: 50px; left: 0; width: 50px; height: 50px; }
+        #btn-right { top: 50px; right: 0; width: 50px; height: 50px; }
+        #actions { right: 40px; width: 160px; height: 160px; }
+        .act-btn {
+            position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-family: 'Audiowide'; color: rgba(255,255,255,0.8); backdrop-filter: blur(2px);
+        }
+        #btn-fire { bottom: 10px; right: 0; width: 90px; height: 90px; background: rgba(0,255,255,0.2); border: 3px solid #0ff; font-size: 18px; }
+        #btn-fire:active { background: rgba(0,255,255,0.6); box-shadow: 0 0 20px #0ff; }
+        #btn-bomb { bottom: 60px; left: 0; width: 60px; height: 60px; background: rgba(255,0,85,0.2); border: 3px solid #f05; font-size: 14px; }
+        #btn-bomb:active { background: rgba(255,0,85,0.6); box-shadow: 0 0 20px #f05; }
+        #btn-pause-mobile {
+            position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
+            border: 2px solid #fff; color: #fff; font-size: 12px; display: flex; justify-content: center; align-items: center;
+            pointer-events: auto; background: rgba(0,0,0,0.5); cursor: pointer;
+        }
+
+        @media (orientation: portrait) {
+            body::after {
+                content: "ROTATE DEVICE"; position: fixed; top:0; left:0; width:100%; height:100%;
+                background: #000; color: #0ff; z-index: 9999; display: flex; justify-content: center; align-items: center;
+                font-size: 24px; letter-spacing: 5px;
+            }
         }
 
         @keyframes glitch { 0%{transform:skew(0deg)} 20%{transform:skew(-5deg)} 22%{transform:skew(5deg)} 24%{transform:skew(0deg)} }
@@ -118,79 +157,105 @@
 </head>
 <body>
 
-<div id="game-container">
-    <div class="scanlines"></div>
-    <div id="game-view"></div>
-    
-    <div id="ui-layer">
-        <div class="hud-row">
-            <div class="hud-panel">
-                <div class="label">SHIELD INTEGRITY</div>
-                <div class="hp-bar" id="hp-bar"></div>
+<div id="game-wrapper">
+    <div id="game-container">
+        <div class="scanlines"></div>
+        <div id="game-view"></div>
+        
+        <div id="ui-layer">
+            <div class="hud-row">
+                <div class="hud-panel">
+                    <div class="label">SHIELD</div>
+                    <div class="hp-bar" id="hp-bar"></div>
+                </div>
+                <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
+                    <div class="label" style="color:#f0f;">SCORE</div>
+                    <div class="value" id="ui-score">000000</div>
+                </div>
             </div>
-            <div class="hud-panel" style="text-align: right; border-color:#f0f; border-top:none; border-bottom:3px solid #f0f;">
-                <div class="label" style="color:#f0f;">SCORE</div>
-                <div class="value" id="ui-score">000000</div>
-                <div class="label" style="margin-top:5px; color:#aaa;">DISTANCE</div>
-                <div class="value" style="font-size:18px; color:#aaa;" id="ui-dist">0 KM</div>
+            <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
+                <div class="label" style="color:#f05;">EMP</div>
+                <div class="value" style="color:#f05;" id="ui-bomb">☢☢☢</div>
             </div>
         </div>
-        <div class="hud-panel" style="margin-top: auto; align-self: flex-start; border-color:#f05; border-top:none; border-left:4px solid #f05;">
-            <div class="label" style="color:#f05;">EMP SYSTEM</div>
-            <div class="value" style="color:#f05; letter-spacing:5px;" id="ui-bomb">☢☢☢</div>
+
+        <div id="titan-msg">TITAN MODE</div>
+
+        <div id="mobile-controls">
+            <div id="btn-pause-mobile" onclick="togglePause()">||</div>
+            <div id="dpad" class="ctrl-area">
+                <div id="btn-up" class="d-btn"></div>
+                <div id="btn-down" class="d-btn"></div>
+                <div id="btn-left" class="d-btn"></div>
+                <div id="btn-right" class="d-btn"></div>
+            </div>
+            <div id="actions" class="ctrl-area">
+                <div id="btn-fire" class="act-btn">FIRE</div>
+                <div id="btn-bomb" class="act-btn">BOMB</div>
+            </div>
         </div>
-    </div>
 
-    <div id="titan-msg">TITAN MODE</div>
-
-    <div id="menu-screen" class="overlay">
-        <h1>HISINGY</h1>
-        <div style="font-size:16px; color:#888; letter-spacing:10px; margin-bottom:40px;">TRILOGY EDITION</div>
-        <div style="display:flex; gap: 20px;">
-            <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
-            <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
-            <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
+        <div id="menu-screen" class="overlay">
+            <h1>HISINGY</h1>
+            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">ONLINE EDITION</div>
+            <div style="display:flex; gap:15px;">
+                <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
+                <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
+                <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN</button>
+            </div>
         </div>
-    </div>
 
-    <div id="loader-screen" class="overlay" style="display:none;">
-        <h1 style="font-size:50px;">SYSTEM BOOT</h1>
-        <div id="console-log">
-            <div>> CORE ONLINE.</div>
-            <div style="color:#888">> WAITING FOR ASSETS...</div>
+        <div id="loader-screen" class="overlay" style="display:none;">
+            <h1 style="font-size:40px;">CONNECTING</h1>
+            <div id="console-log">
+                <div>> SERVER CONNECTED.</div>
+            </div>
+            <div id="manual-load-ui" style="display:none; text-align:center; margin-top:20px;">
+                <p style="color:#f05; font-size:12px;">AUTO-LOAD FAILED. USE LOCAL FILES:</p>
+                <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
+                    LOAD MANUALLY
+                    <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
+                </button>
+            </div>
+            <div id="loading-bar" style="width:200px; height:4px; background:#333; margin-top:20px;">
+                <div id="loading-progress" style="width:0%; height:100%; background:#0f0;"></div>
+            </div>
         </div>
-        <button class="btn" id="load-btn" style="border-color:#aaa; color:#aaa;">
-            LOAD DATA
-            <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
-        </button>
-        <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:20px; border-color:#0f0; color:#0f0; box-shadow:0 0 30px #0f0;">>>> LAUNCH <<<</button>
-    </div>
 
-    <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
-        <h1 style="font-size:80px; animation:none;">PAUSED</h1>
-        <div style="margin-top:20px; font-size:24px; letter-spacing:2px;">PRESS [V] TO RESUME</div>
-    </div>
+        <div id="pause-screen" class="overlay" style="display:none; background:rgba(0,0,0,0.8);">
+            <h1 style="font-size:60px; animation:none;">PAUSED</h1>
+            <div style="margin-top:20px; font-size:20px; cursor:pointer;" onclick="togglePause()">[ RESUME ]</div>
+        </div>
 
-    <div id="game-over-screen" class="overlay" style="display:none;">
-        <h1 style="color:#f05; font-size:80px;">CRITICAL FAILURE</h1>
-        <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
-        <div style="font-size:30px; margin-bottom:40px; font-family:'Rajdhani';">FINAL SCORE: <span id="final-score" style="color:#fff;">0</span></div>
-        <button class="btn" onclick="returnToMenu()">REBOOT SYSTEM</button>
+        <div id="game-over-screen" class="overlay" style="display:none;">
+            <h1 style="color:#f05; font-size:60px;">DEFEATED</h1>
+            <div id="nan-msg" class="nan-msg" style="display:none;">我们只做楠的事！不做简单的事！</div>
+            <div style="font-size:24px; margin-bottom:40px;">SCORE: <span id="final-score" style="color:#fff;">0</span></div>
+            <button class="btn" onclick="returnToMenu()">REBOOT</button>
+        </div>
     </div>
 </div>
 
 <script>
+// ==========================================
+// 1. 核心适配
+// ==========================================
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
 
-const TARGET_SIZES = {
-    P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, 
-    ITEM: 48, BULLET_P: 48, BULLET_E: 32 
-};
-
+const TARGET_SIZES = { P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, ITEM: 48, BULLET_P: 48, BULLET_E: 32 };
 const C = { C:0x00FFFF, M:0xFF00FF, Y:0xFFFF00, R:0xFF3333, G:0x39FF14, O:0xFFA500, W:0xFFFFFF };
 let difficulty = 2;
 let assetsReady = false; 
+
+function resizeGame() {
+    const wrapper = document.getElementById('game-wrapper');
+    const winW = window.innerWidth, winH = window.innerHeight;
+    const scale = Math.min(winW / 960, winH / 540);
+    wrapper.style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', resizeGame);
+resizeGame();
 
 function getScale(tex, target) {
     if(!tex) return 1;
@@ -201,7 +266,10 @@ function selectDifficulty(mode) {
     difficulty = mode;
     document.getElementById('menu-screen').style.display='none';
     if(assetsReady) startGame();
-    else document.getElementById('loader-screen').style.display='flex';
+    else {
+        document.getElementById('loader-screen').style.display='flex';
+        Assets.autoLoad(); // 开始自动抓取
+    }
 }
 
 function returnToMenu() {
@@ -209,71 +277,156 @@ function returnToMenu() {
     gameLayer.removeChildren(); fxLayer.removeChildren(); trailLayer.removeChildren();
     document.getElementById('game-over-screen').style.display='none';
     document.getElementById('ui-layer').style.display='none';
+    document.getElementById('mobile-controls').style.display='none';
     document.getElementById('menu-screen').style.display='flex';
 }
 
+function togglePause() {
+    if (state === 'PLAY') { 
+        state = 'PAUSED'; AudioSys.suspend(); 
+        document.getElementById('pause-screen').style.display = 'flex'; 
+    } else if (state === 'PAUSED') { 
+        state = 'PLAY'; AudioSys.resume(); 
+        document.getElementById('pause-screen').style.display = 'none'; 
+    }
+}
+
+function isTouchDevice() { return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)); }
+function initMobileControls() {
+    if(!isTouchDevice()) return;
+    document.getElementById('mobile-controls').style.display = 'block';
+    const bindTouch = (id, key) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+    bindTouch('btn-up', 'ArrowUp'); bindTouch('btn-down', 'ArrowDown');
+    bindTouch('btn-left', 'ArrowLeft'); bindTouch('btn-right', 'ArrowRight');
+    bindTouch('btn-fire', ' '); bindTouch('btn-bomb', 'b');
+}
+
+// ==========================================
+// 2. 自动资源加载器 (Online Loader)
+// ==========================================
+// 必须与 assets 文件夹内的文件名完全一致
+const ASSET_LIST = [
+    'player.png','player_up.png','player_down.png','player_titan.png',
+    'bg_far.png','bg_mid.png','bg_near.png',
+    'bullet_player.png','bullet_enemy.png','item_box.png','particle.png',
+    'enemy_scout.png','enemy_turret.png','enemy_interceptor.png','enemy_heavy.png','enemy_swarm.png',
+    'shoot.wav','boom.wav','power.wav','titan.wav','emp.wav','bgm.mp3'
+];
+
 const Assets = { tex:{}, snd:{}, 
     log(m) { const c=document.getElementById('console-log'); c.innerHTML+=`<div>> ${m}</div>`; c.scrollTop=c.scrollHeight; },
-    load(files) {
-        let cnt = 0, total = files.length;
-        if(total===0) return;
-        document.getElementById('console-log').innerHTML = ''; 
-        this.log(`SCANNING ${total} FILES...`);
+    
+    // 自动模式：从 assets/ 目录抓取
+    autoLoad() {
+        this.log("DOWNLOADING ASSETS...");
+        let loaded = 0, total = ASSET_LIST.length;
         
-        const check = () => {
-            cnt++;
-            if(cnt >= total) {
-                document.getElementById('load-btn').style.display='none';
-                document.getElementById('start-btn').style.display='inline-block';
-                Assets.log("ALL SYSTEMS GREEN.");
-                assetsReady = true; 
-            }
-        };
+        ASSET_LIST.forEach(file => {
+            const path = `assets/${file}`;
+            const n = file.toLowerCase();
+            const isImg = file.endsWith('.png');
+            
+            const onSuccess = (data) => {
+                this.processAsset(file, data, isImg);
+                loaded++;
+                document.getElementById('loading-progress').style.width = (loaded/total)*100 + '%';
+                if(loaded >= total) this.finishLoad();
+            };
+            
+            // 失败处理：如果有一个文件下载失败，不卡死，但记录日志
+            const onFail = () => {
+                console.warn("Missing: " + file);
+                loaded++; // 依然计数，避免卡住
+                if(loaded >= total) this.finishLoad();
+            };
 
+            if(isImg) {
+                PIXI.Texture.fromURL(path).then(t => {
+                    if(t.width>1) onSuccess(t); else onFail();
+                }).catch(onFail);
+            } else {
+                fetch(path).then(r => {
+                    if(r.ok) return r.arrayBuffer();
+                    throw new Error(404);
+                }).then(buf => AudioSys.ctx.decodeAudioData(buf, b => onSuccess(b), onFail))
+                  .catch(onFail);
+            }
+        });
+        
+        // 5秒超时检测：如果网络太慢或路径错误，显示手动按钮
+        setTimeout(() => {
+            if(!assetsReady) {
+                this.log("TIMEOUT. TRY MANUAL LOAD.");
+                document.getElementById('manual-load-ui').style.display = 'block';
+                document.getElementById('loading-bar').style.display = 'none';
+            }
+        }, 5000);
+    },
+
+    // 手动模式：本地文件流
+    manualLoad(files) {
+        let cnt=0;
+        document.getElementById('manual-load-ui').style.display='none';
+        this.log(`READING ${files.length} FILES...`);
         Array.from(files).forEach(f => {
-            const n = f.name.toLowerCase();
             const url = URL.createObjectURL(f);
             if(f.name.endsWith('.png')) {
-                PIXI.Texture.fromURL(url).then(t => { 
-                    if(n==='player.png') this.tex['P'] = t;
-                    else if(n==='player_up.png') this.tex['P_UP'] = t;
-                    else if(n==='player_down.png') this.tex['P_DOWN'] = t;
-                    else if(n==='player_titan.png') this.tex['P_TITAN'] = t;
-                    else if(n.includes('bg_far')) this.tex['BG_FAR'] = t;
-                    else if(n.includes('bg_mid')) this.tex['BG_MID'] = t;
-                    else if(n.includes('bg_near')) this.tex['BG_NEAR'] = t;
-                    else if(n.includes('bullet_player')) this.tex['B_P'] = t;
-                    else if(n.includes('bullet_enemy')) this.tex['B_E'] = t;
-                    else if(n.includes('scout')) this.tex['E0'] = t;
-                    else if(n.includes('turret')) this.tex['E1'] = t;
-                    else if(n.includes('interceptor')) this.tex['E2'] = t;
-                    else if(n.includes('heavy')) this.tex['E3'] = t;
-                    else if(n.includes('swarm')) this.tex['E4'] = t;
-                    else if(n.includes('item_box')) this.tex['ITEM'] = t;
-                    else if(n.includes('particle')) this.tex['PART'] = t;
-                    this.log(`IMG: ${f.name}`); check(); 
-                }).catch(()=>check());
+                PIXI.Texture.fromURL(url).then(t => { this.processAsset(f.name, t, true); check(); });
             } else if(f.name.endsWith('.wav') || f.name.endsWith('.mp3')) {
                 const r = new FileReader();
-                r.onload = e => AudioSys.ctx.decodeAudioData(e.target.result, b => {
-                    let k='u'; 
-                    if(n.includes('shoot'))k='shoot'; else if(n.includes('boom'))k='boom';
-                    else if(n.includes('power'))k='power'; else if(n.includes('titan'))k='titan';
-                    else if(n.includes('emp'))k='emp'; else if(n.includes('bgm'))k='bgm';
-                    this.snd[k]=b; this.log(`SND: ${f.name}`); check();
-                }, ()=>check());
+                r.onload = e => AudioSys.ctx.decodeAudioData(e.target.result, b => { this.processAsset(f.name, b, false); check(); });
                 r.readAsArrayBuffer(f);
-            } else { check(); }
+            } else check();
         });
+        const check = () => { cnt++; if(cnt>=files.length) this.finishLoad(); };
+    },
+
+    finishLoad() {
+        assetsReady = true;
+        this.log("ASSETS SECURED.");
+        setTimeout(() => startGame(), 500); // 延迟一点进入
+    },
+
+    processAsset(name, data, isImg) {
+        const n = name.toLowerCase();
+        if(isImg) {
+            if(n==='player.png') this.tex['P'] = data;
+            else if(n==='player_up.png') this.tex['P_UP'] = data;
+            else if(n==='player_down.png') this.tex['P_DOWN'] = data;
+            else if(n==='player_titan.png') this.tex['P_TITAN'] = data;
+            else if(n.includes('bg_far')) this.tex['BG_FAR'] = data;
+            else if(n.includes('bg_mid')) this.tex['BG_MID'] = data;
+            else if(n.includes('bg_near')) this.tex['BG_NEAR'] = data;
+            else if(n.includes('bullet_player')) this.tex['B_P'] = data;
+            else if(n.includes('bullet_enemy')) this.tex['B_E'] = data;
+            else if(n.includes('scout')) this.tex['E0'] = data;
+            else if(n.includes('turret')) this.tex['E1'] = data;
+            else if(n.includes('interceptor')) this.tex['E2'] = data;
+            else if(n.includes('heavy')) this.tex['E3'] = data;
+            else if(n.includes('swarm')) this.tex['E4'] = data;
+            else if(n.includes('item_box')) this.tex['ITEM'] = data;
+            else if(n.includes('particle')) this.tex['PART'] = data;
+        } else {
+            if(n.includes('shoot')) AudioSys.bufs['shoot']=data;
+            else if(n.includes('boom')) AudioSys.bufs['boom']=data;
+            else if(n.includes('power')) AudioSys.bufs['power']=data;
+            else if(n.includes('titan')) AudioSys.bufs['titan']=data;
+            else if(n.includes('emp')) AudioSys.bufs['emp']=data;
+            else if(n.includes('bgm')) AudioSys.bufs['bgm']=data;
+        }
     }
 };
-document.getElementById('file-input').addEventListener('change', e=>Assets.load(e.target.files));
+document.getElementById('file-input').addEventListener('change', e=>Assets.manualLoad(e.target.files));
 
 const AudioSys = {
-    ctx: new (window.AudioContext||window.webkitAudioContext)(), bgm:null,
+    ctx: new (window.AudioContext||window.webkitAudioContext)(), bufs:{}, bgm:null,
     play(k, loop=false) {
-        if(!Assets.snd[k]) return;
-        const s=this.ctx.createBufferSource(); s.buffer=Assets.snd[k]; s.loop=loop;
+        if(!this.bufs[k]) return;
+        const s=this.ctx.createBufferSource(); s.buffer=this.bufs[k]; s.loop=loop;
         const g=this.ctx.createGain(); g.gain.value=k=='bgm'?0.4:0.5;
         s.connect(g); g.connect(this.ctx.destination); s.start(0);
         if(k=='bgm') this.bgm=s;
@@ -283,6 +436,9 @@ const AudioSys = {
     resume(){ if(this.ctx.state==='suspended') this.ctx.resume(); }
 };
 
+// ==========================================
+// 3. 兜底美术 (Procedural)
+// ==========================================
 function createGlowingBullet(color, isEnemy) {
     const g = new PIXI.Graphics();
     g.beginFill(color, 0.4); 
@@ -293,25 +449,24 @@ function createGlowingBullet(color, isEnemy) {
     g.endFill();
     return app.renderer.generateTexture(g);
 }
-
 function createRectTex(w,h,c) {
     const g = new PIXI.Graphics(); g.beginFill(c); g.lineStyle(2,0xFFFFFF); g.drawRect(0,0,w,h); g.endFill();
     return app.renderer.generateTexture(g);
 }
-
 function initDefaults() {
     if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
     if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
     if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
-    
     if(!Assets.tex['B_P']) Assets.tex['B_P'] = createGlowingBullet(C.C, false);
     if(!Assets.tex['B_E']) Assets.tex['B_E'] = createGlowingBullet(C.R, true);
-    
     if(!Assets.tex['ITEM']) Assets.tex['ITEM'] = createRectTex(30,30,C.Y);
     const cols = [C.G, C.R, C.C, C.O, C.M];
     for(let i=0;i<5;i++) if(!Assets.tex['E'+i]) Assets.tex['E'+i] = createRectTex(40,40,cols[i]);
 }
 
+// ==========================================
+// 4. 引擎核心
+// ==========================================
 let app, stage, bgLayer, trailLayer, gameLayer, fxLayer, bloomFilter, rgbSplit;
 let player, bullets=[], ebullets=[], enemies=[], items=[], particles=[], backgrounds=[], afterImages=[];
 let state='MENU', score=0, dist=0, speed=1.0, shake=0, flash=0, time=0;
@@ -340,6 +495,8 @@ window.onload = function() {
     const hpCon = document.getElementById('hp-bar');
     for(let i=0; i<20; i++) { hpCon.appendChild(document.createElement('div')).className = 'hp-seg on'; }
     app.ticker.add(loop);
+    
+    if(isTouchDevice()) initMobileControls();
 };
 
 function createParallax() {
@@ -366,6 +523,7 @@ function startGame() {
     AudioSys.ctx.resume(); AudioSys.play('bgm', true);
     document.getElementById('loader-screen').style.display='none';
     document.getElementById('ui-layer').style.display='flex';
+    if(isTouchDevice()) document.getElementById('mobile-controls').style.display='block';
     initDefaults(); 
     resetGame();
 }
@@ -398,6 +556,7 @@ function spawnEnemy() {
     if(difficulty === 1) baseSpawn = 0.008;
     if(difficulty === 3) baseSpawn = 0.038; 
 
+    // Frame-rate independence fix
     if(Math.random() >= baseSpawn * speed * (app.ticker.deltaMS/16.6)) return;
 
     const id = Math.floor(Math.random()*5);
@@ -654,8 +813,8 @@ function loop(delta) {
         document.getElementById('game-over-screen').style.display='flex';
         document.getElementById('final-score').innerText = Math.floor(score);
         const nanMsg = document.getElementById('nan-msg');
-        // 只有模式3显示彩虹字
         if(difficulty === 3) nanMsg.style.display = 'block'; else nanMsg.style.display = 'none';
+        if(isTouchDevice()) document.getElementById('mobile-controls').style.display='none';
     }
 }
 function hit(a,b,t) { return Math.abs(a.x-b.x)<t && Math.abs(a.y-b.y)<t; }
@@ -666,10 +825,7 @@ window.addEventListener('keydown', e=>{
         enemies.forEach(e => { score+=e.score; createExplosion(e.x,e.y,C.C, 3); gameLayer.removeChild(e); });
         enemies=[]; ebullets.forEach(b => b.parent.removeChild(b)); ebullets=[];
     }
-    if(e.key.toLowerCase()=='v') {
-        if(state === 'PLAY') { state = 'PAUSED'; AudioSys.suspend(); document.getElementById('pause-screen').style.display = 'flex'; } 
-        else if (state === 'PAUSED') { state = 'PLAY'; AudioSys.resume(); document.getElementById('pause-screen').style.display = 'none'; }
-    }
+    if(e.key.toLowerCase()=='v') { togglePause(); }
 });
 window.addEventListener('keyup', e=>keys[e.key]=false);
 </script>
