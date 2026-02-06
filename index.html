@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HISINGY: FLAWLESS</title>
+    <title>HISINGY: STABLE OVERDRIVE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
@@ -18,7 +18,7 @@
         #game-wrapper {
             position: relative; width: 960px; height: 540px;
             transform-origin: center center;
-            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 120px rgba(0, 200, 255, 0.15);
         }
 
         #game-container {
@@ -29,7 +29,7 @@
         .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px; opacity: 0.6; mix-blend-mode: overlay;
+            background-size: 100% 4px; opacity: 0.7; mix-blend-mode: overlay;
         }
 
         canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
@@ -44,7 +44,7 @@
         .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
         
         .hud-panel {
-            background: rgba(0, 10, 20, 0.8); border: 1px solid rgba(0, 255, 255, 0.2);
+            background: rgba(0, 5, 10, 0.7); border: 1px solid rgba(0, 255, 255, 0.1);
             border-top: 3px solid #0ff; padding: 5px 15px;
             backdrop-filter: blur(4px); transform: skewX(-15deg);
         }
@@ -80,23 +80,20 @@
 
         .btn-easy { border-color: #0f0; color: #0f0; }
         .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 40px #0f0; }
-        
         .btn-norm { border-color: #ff0; color: #ff0; }
         .btn-norm:hover { background: #ff0; color: #000; box-shadow: 0 0 40px #ff0; }
-        
         .btn-nan { border-color: #f00; color: #f00; }
         .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
-        /* 调试日志：左上角，初始显示，游戏开始后隐藏 */
-        #debug-log {
-            position: absolute; top: 10px; left: 10px; width: 400px; max-height: 200px;
-            font-size: 10px; color: #fff; font-family: monospace; text-align: left;
-            z-index: 200; pointer-events: none; overflow-y: auto; text-shadow: 1px 1px 0 #000;
-            display: flex; flex-direction: column-reverse;
+        #console-log {
+            position: absolute; top:10px; left:10px; width: 400px; height: 150px; 
+            font-size: 11px; color: #fff; font-family: monospace; text-align: left;
+            z-index: 200; pointer-events: none; overflow-y: hidden; 
+            display: flex; flex-direction: column-reverse; text-shadow: 1px 1px 0 #000;
         }
+        .log-line { margin-bottom: 2px; }
         .log-err { color: #f05; background:rgba(0,0,0,0.5); }
         .log-ok { color: #0f0; }
-        .log-warn { color: #ff0; }
 
         #titan-msg {
             position: absolute; top: 35%; width: 100%; text-align: center;
@@ -156,7 +153,7 @@
         @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} }
         @keyframes rainbow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.8/browser/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
 </head>
 <body>
@@ -203,7 +200,7 @@
 
         <div id="menu-screen" class="overlay">
             <h1>HISINGY</h1>
-            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">FLAWLESS</div>
+            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">STABLE OVERDRIVE</div>
             <div style="display:flex; gap:15px;">
                 <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
                 <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
@@ -213,14 +210,12 @@
 
         <div id="loader-screen" class="overlay" style="display:none;">
             <h1 style="font-size:40px;">LOADING...</h1>
-            <div id="console-log" style="opacity:0.6; margin-bottom:10px;"></div>
-            
             <div style="width: 400px; height: 4px; background: #333; border-radius: 2px;">
                 <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; box-shadow: 0 0 10px #0f0; transition: width 0.1s;"></div>
             </div>
 
             <div id="manual-load-ui" style="display:none; text-align:center; margin-top:20px;">
-                <p style="color:#f05; font-size:12px;">AUTO-LOAD FAILED. USE LOCAL FILES:</p>
+                <p style="color:#f05; font-size:12px; margin-bottom:10px;">AUTO-LOAD FAILED (CHECK FILENAMES)</p>
                 <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
                     MANUAL LOAD
                     <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
@@ -248,6 +243,7 @@
 // ==========================================
 // 1. 核心适配与高画质
 // ==========================================
+// 开启高清屏适配
 PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
@@ -329,8 +325,9 @@ function initMobileControls() {
 }
 
 // ==========================================
-// 2. 资源加载器 (已移除子弹/粒子图片依赖)
+// 2. 资源加载器 (GitHub 自动适配)
 // ==========================================
+// 请确保 GitHub assets 文件夹中文件名全小写，bgm.wav
 const ASSET_LIST = [
     'player.png','player_up.png','player_down.png','player_titan.png',
     'bg_far.png','bg_mid.png','bg_near.png',
@@ -343,7 +340,7 @@ const Assets = { tex:{}, snd:{},
     
     // 自动加载
     autoLoad() {
-        log("CONNECTING TO ASSETS...");
+        log("CONNECTING...");
         let loaded = 0, total = ASSET_LIST.length;
         let failed = false;
 
@@ -386,7 +383,7 @@ const Assets = { tex:{}, snd:{},
         // 5秒强制超时
         setTimeout(() => {
             if(!assetsReady) {
-                log("TIMEOUT. SHOWING MANUAL.", 'err');
+                log("TIMEOUT. MANUAL?", 'err');
                 document.getElementById('manual-load-ui').style.display = 'block';
             }
         }, 5000);
@@ -479,10 +476,8 @@ function initDefaults() {
     if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
     if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
     if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
-    // 强制使用代码生成的子弹，不再依赖图片
-    Assets.tex['B_P'] = createGlowingBullet(C.C, false);
-    Assets.tex['B_E'] = createGlowingBullet(C.R, true);
-    
+    if(!Assets.tex['B_P']) Assets.tex['B_P'] = createGlowingBullet(C.C, false);
+    if(!Assets.tex['B_E']) Assets.tex['B_E'] = createGlowingBullet(C.R, true);
     if(!Assets.tex['ITEM']) Assets.tex['ITEM'] = createRectTex(30,30,C.Y);
     const cols = [C.G, C.R, C.C, C.O, C.M];
     for(let i=0;i<5;i++) if(!Assets.tex['E'+i]) Assets.tex['E'+i] = createRectTex(40,40,cols[i]);
@@ -509,6 +504,7 @@ window.onload = function() {
     gameLayer = new PIXI.Container(); stage.addChild(gameLayer);
     fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
     
+    // 特效安全加载 (Try-Catch)
     try { 
         if(PIXI.filters) {
             bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5});
@@ -516,7 +512,7 @@ window.onload = function() {
             rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0};
             stage.filters = [bloomFilter, rgbSplit];
         }
-    } catch(e){}
+    } catch(e){ log("FILTERS FAILED.", 'err'); }
     
     initDefaults();
     const hpCon = document.getElementById('hp-bar');
@@ -547,9 +543,7 @@ function createParallax() {
 }
 
 function startGame() {
-    // 隐藏调试日志
-    document.getElementById('debug-log').style.display = 'none';
-    
+    document.getElementById('debug-log').style.display='none';
     AudioSys.ctx.resume(); AudioSys.play('bgm', true);
     document.getElementById('loader-screen').style.display='none';
     document.getElementById('ui-layer').style.display='flex';
