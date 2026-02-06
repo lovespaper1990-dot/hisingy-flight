@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HISINGY: ONLINE</title>
+    <title>HISINGY: ULTIMATE</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Audiowide&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;800&display=swap');
@@ -18,22 +18,24 @@
         #game-wrapper {
             position: relative; width: 960px; height: 540px;
             transform-origin: center center;
-            box-shadow: 0 0 80px rgba(0, 200, 255, 0.15);
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8);
         }
 
         #game-container {
             position: absolute; top:0; left:0; width: 100%; height: 100%;
-            background: #010103; border: 2px solid #222; overflow: hidden;
+            background: #010103; border: 2px solid #333; overflow: hidden;
         }
 
+        /* 高清扫描线 */
         .scanlines {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
             background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-            background-size: 100% 4px; opacity: 0.8; mix-blend-mode: overlay;
+            background-size: 100% 4px; opacity: 0.6; mix-blend-mode: overlay;
         }
 
-        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+        canvas { display: block; width: 100%; height: 100%; }
 
+        /* UI */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; padding: 20px; box-sizing: border-box;
@@ -44,7 +46,7 @@
         .hud-row { display: flex; justify-content: space-between; align-items: flex-start; }
         
         .hud-panel {
-            background: rgba(0, 5, 10, 0.7); border: 1px solid rgba(0, 255, 255, 0.1);
+            background: rgba(0, 10, 20, 0.8); border: 1px solid rgba(0, 255, 255, 0.2);
             border-top: 3px solid #0ff; padding: 5px 15px;
             backdrop-filter: blur(4px); transform: skewX(-15deg);
         }
@@ -78,7 +80,6 @@
         }
         .btn:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
 
-        /* 红绿灯配色 */
         .btn-easy { border-color: #0f0; color: #0f0; }
         .btn-easy:hover { background: #0f0; color: #000; box-shadow: 0 0 40px #0f0; }
         
@@ -88,11 +89,15 @@
         .btn-nan { border-color: #f00; color: #f00; }
         .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
-        #console-log {
-            width: 500px; height: 100px; background: #000; border: 1px solid #333;
-            padding: 15px; font-size: 12px; color: #0f0; overflow-y:auto; text-align: left;
-            margin: 20px 0; font-family: monospace; opacity: 0.8;
+        /* 调试控制台：显示加载错误 */
+        #debug-log {
+            position: absolute; top: 10px; left: 10px; width: 400px; max-height: 200px;
+            font-size: 10px; color: #fff; font-family: monospace; text-align: left;
+            z-index: 200; pointer-events: none; overflow-y: auto; text-shadow: 1px 1px 0 #000;
         }
+        .log-err { color: #f05; }
+        .log-ok { color: #0f0; }
+        .log-warn { color: #ff0; }
 
         #titan-msg {
             position: absolute; top: 35%; width: 100%; text-align: center;
@@ -108,7 +113,6 @@
             animation: rainbow 5s ease infinite; font-family: "Microsoft YaHei", sans-serif;
         }
 
-        /* 手机控制器 */
         #mobile-controls {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 80; pointer-events: none; display: none;
@@ -116,10 +120,10 @@
         .ctrl-area { position: absolute; bottom: 20px; pointer-events: auto; }
         #dpad { left: 40px; width: 150px; height: 150px; }
         .d-btn {
-            position: absolute; background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 10px; backdrop-filter: blur(2px);
+            position: absolute; background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2); border-radius: 10px; backdrop-filter: blur(2px);
         }
-        .d-btn:active { background: rgba(0, 255, 255, 0.5); border-color: #0ff; }
+        .d-btn:active { background: rgba(0, 255, 255, 0.4); border-color: #0ff; }
         #btn-up { top: 0; left: 50px; width: 50px; height: 50px; }
         #btn-down { bottom: 0; left: 50px; width: 50px; height: 50px; }
         #btn-left { top: 50px; left: 0; width: 50px; height: 50px; }
@@ -127,12 +131,12 @@
         #actions { right: 40px; width: 160px; height: 160px; }
         .act-btn {
             position: absolute; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-family: 'Audiowide'; color: rgba(255,255,255,0.8); backdrop-filter: blur(2px);
+            font-family: 'Audiowide'; color: rgba(255,255,255,0.7); backdrop-filter: blur(2px);
         }
-        #btn-fire { bottom: 10px; right: 0; width: 90px; height: 90px; background: rgba(0,255,255,0.2); border: 3px solid #0ff; font-size: 18px; }
-        #btn-fire:active { background: rgba(0,255,255,0.6); box-shadow: 0 0 20px #0ff; }
-        #btn-bomb { bottom: 60px; left: 0; width: 60px; height: 60px; background: rgba(255,0,85,0.2); border: 3px solid #f05; font-size: 14px; }
-        #btn-bomb:active { background: rgba(255,0,85,0.6); box-shadow: 0 0 20px #f05; }
+        #btn-fire { bottom: 10px; right: 0; width: 90px; height: 90px; background: rgba(0,255,255,0.15); border: 3px solid #0ff; font-size: 18px; }
+        #btn-fire:active { background: rgba(0,255,255,0.5); box-shadow: 0 0 20px #0ff; }
+        #btn-bomb { bottom: 60px; left: 0; width: 60px; height: 60px; background: rgba(255,0,85,0.15); border: 3px solid #f05; font-size: 14px; }
+        #btn-bomb:active { background: rgba(255,0,85,0.5); box-shadow: 0 0 20px #f05; }
         #btn-pause-mobile {
             position: absolute; top: 20px; right: 20px; width: 40px; height: 40px;
             border: 2px solid #fff; color: #fff; font-size: 12px; display: flex; justify-content: center; align-items: center;
@@ -162,6 +166,8 @@
         <div class="scanlines"></div>
         <div id="game-view"></div>
         
+        <div id="debug-log"></div>
+
         <div id="ui-layer">
             <div class="hud-row">
                 <div class="hud-panel">
@@ -197,23 +203,21 @@
 
         <div id="menu-screen" class="overlay">
             <h1>HISINGY</h1>
-            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">ONLINE EDITION</div>
+            <div style="font-size:14px; color:#888; letter-spacing:8px; margin-bottom:40px;">ULTIMATE</div>
             <div style="display:flex; gap:15px;">
                 <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
                 <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
-                <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN</button>
+                <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
             </div>
         </div>
 
         <div id="loader-screen" class="overlay" style="display:none;">
-            <h1 style="font-size:40px;">CONNECTING</h1>
-            <div id="console-log">
-                <div>> SERVER CONNECTED.</div>
-            </div>
-            <div id="manual-load-ui" style="display:none; text-align:center; margin-top:20px;">
+            <h1 style="font-size:40px;">LOADING...</h1>
+            <div id="load-status" style="color:#888; margin-bottom: 20px;">INITIALIZING</div>
+            <div id="manual-load-ui" style="display:none; text-align:center;">
                 <p style="color:#f05; font-size:12px;">AUTO-LOAD FAILED. USE LOCAL FILES:</p>
                 <button class="btn" style="border-color:#aaa; color:#aaa; font-size:14px;">
-                    LOAD MANUALLY
+                    MANUAL LOAD
                     <input type="file" id="file-input" multiple accept=".png,.jpg,.wav,.mp3">
                 </button>
             </div>
@@ -238,8 +242,10 @@
 
 <script>
 // ==========================================
-// 1. 核心适配
+// 1. 核心适配与高画质
 // ==========================================
+// 开启高 DPI 支持，解决手机模糊问题
+PIXI.settings.RESOLUTION = window.devicePixelRatio || 1;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
 
@@ -247,6 +253,19 @@ const TARGET_SIZES = { P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, ITEM: 48, BU
 const C = { C:0x00FFFF, M:0xFF00FF, Y:0xFFFF00, R:0xFF3333, G:0x39FF14, O:0xFFA500, W:0xFFFFFF };
 let difficulty = 2;
 let assetsReady = false; 
+
+// Debug Logger
+function log(msg, type='log') {
+    const el = document.getElementById('debug-log');
+    if(el) {
+        const div = document.createElement('div');
+        div.innerText = `> ${msg}`;
+        div.className = type==='err' ? 'log-err' : (type==='warn'?'log-warn':'log-ok');
+        el.appendChild(div);
+        el.scrollTop = el.scrollHeight;
+    }
+    console.log(msg);
+}
 
 function resizeGame() {
     const wrapper = document.getElementById('game-wrapper');
@@ -265,10 +284,12 @@ function getScale(tex, target) {
 function selectDifficulty(mode) {
     difficulty = mode;
     document.getElementById('menu-screen').style.display='none';
-    if(assetsReady) startGame();
-    else {
+    // 强制先尝试自动加载
+    if(!assetsReady) {
         document.getElementById('loader-screen').style.display='flex';
-        Assets.autoLoad(); // 开始自动抓取
+        Assets.autoLoad(); 
+    } else {
+        startGame();
     }
 }
 
@@ -306,9 +327,8 @@ function initMobileControls() {
 }
 
 // ==========================================
-// 2. 自动资源加载器 (Online Loader)
+// 2. 资源加载器 (防黑屏逻辑)
 // ==========================================
-// 必须与 assets 文件夹内的文件名完全一致
 const ASSET_LIST = [
     'player.png','player_up.png','player_down.png','player_titan.png',
     'bg_far.png','bg_mid.png','bg_near.png',
@@ -318,67 +338,71 @@ const ASSET_LIST = [
 ];
 
 const Assets = { tex:{}, snd:{}, 
-    log(m) { const c=document.getElementById('console-log'); c.innerHTML+=`<div>> ${m}</div>`; c.scrollTop=c.scrollHeight; },
     
-    // 自动模式：从 assets/ 目录抓取
+    // 自动模式：必须保证 GitHub 的 assets 文件夹里文件名全小写！
     autoLoad() {
-        this.log("DOWNLOADING ASSETS...");
+        log("START AUTO-LOAD...", 'warn');
         let loaded = 0, total = ASSET_LIST.length;
         
         ASSET_LIST.forEach(file => {
             const path = `assets/${file}`;
-            const n = file.toLowerCase();
             const isImg = file.endsWith('.png');
             
-            const onSuccess = (data) => {
-                this.processAsset(file, data, isImg);
+            const onFinish = (success) => {
                 loaded++;
                 document.getElementById('loading-progress').style.width = (loaded/total)*100 + '%';
-                if(loaded >= total) this.finishLoad();
-            };
-            
-            // 失败处理：如果有一个文件下载失败，不卡死，但记录日志
-            const onFail = () => {
-                console.warn("Missing: " + file);
-                loaded++; // 依然计数，避免卡住
                 if(loaded >= total) this.finishLoad();
             };
 
             if(isImg) {
                 PIXI.Texture.fromURL(path).then(t => {
-                    if(t.width>1) onSuccess(t); else onFail();
-                }).catch(onFail);
+                    if(t.width > 1) {
+                        this.processAsset(file, t, true);
+                        onFinish(true);
+                    } else {
+                        log(`EMPTY: ${file}`, 'err'); // 图片加载了但尺寸不对
+                        onFinish(false);
+                    }
+                }).catch(() => {
+                    log(`MISSING: ${file}`, 'err'); // 404
+                    onFinish(false);
+                });
             } else {
                 fetch(path).then(r => {
                     if(r.ok) return r.arrayBuffer();
                     throw new Error(404);
-                }).then(buf => AudioSys.ctx.decodeAudioData(buf, b => onSuccess(b), onFail))
-                  .catch(onFail);
+                }).then(buf => AudioSys.ctx.decodeAudioData(buf, b => {
+                    this.processAsset(file, b, false);
+                    onFinish(true);
+                }, () => { log(`DECODE FAIL: ${file}`, 'err'); onFinish(false); }))
+                .catch(() => {
+                    log(`MISSING: ${file}`, 'err'); // 404
+                    onFinish(false);
+                });
             }
         });
         
-        // 5秒超时检测：如果网络太慢或路径错误，显示手动按钮
+        // 超时保护：5秒后强制进入，哪怕资源没加载全
         setTimeout(() => {
             if(!assetsReady) {
-                this.log("TIMEOUT. TRY MANUAL LOAD.");
-                document.getElementById('manual-load-ui').style.display = 'block';
-                document.getElementById('loading-bar').style.display = 'none';
+                log("TIMEOUT FORCE START.", 'warn');
+                this.finishLoad();
             }
         }, 5000);
     },
 
-    // 手动模式：本地文件流
+    // 手动加载
     manualLoad(files) {
         let cnt=0;
         document.getElementById('manual-load-ui').style.display='none';
-        this.log(`READING ${files.length} FILES...`);
+        log(`MANUAL LOAD: ${files.length} FILES`);
         Array.from(files).forEach(f => {
             const url = URL.createObjectURL(f);
             if(f.name.endsWith('.png')) {
-                PIXI.Texture.fromURL(url).then(t => { this.processAsset(f.name, t, true); check(); });
+                PIXI.Texture.fromURL(url).then(t => { this.processAsset(f.name, t, true); check(); }).catch(()=>check());
             } else if(f.name.endsWith('.wav') || f.name.endsWith('.mp3')) {
                 const r = new FileReader();
-                r.onload = e => AudioSys.ctx.decodeAudioData(e.target.result, b => { this.processAsset(f.name, b, false); check(); });
+                r.onload = e => AudioSys.ctx.decodeAudioData(e.target.result, b => { this.processAsset(f.name, b, false); check(); }, ()=>check());
                 r.readAsArrayBuffer(f);
             } else check();
         });
@@ -386,18 +410,20 @@ const Assets = { tex:{}, snd:{},
     },
 
     finishLoad() {
+        if(assetsReady) return;
         assetsReady = true;
-        this.log("ASSETS SECURED.");
-        setTimeout(() => startGame(), 500); // 延迟一点进入
+        log("GAME STARTING...", 'ok');
+        document.getElementById('loader-screen').style.display = 'none';
+        startGame();
     },
 
     processAsset(name, data, isImg) {
         const n = name.toLowerCase();
         if(isImg) {
-            if(n==='player.png') this.tex['P'] = data;
-            else if(n==='player_up.png') this.tex['P_UP'] = data;
-            else if(n==='player_down.png') this.tex['P_DOWN'] = data;
-            else if(n==='player_titan.png') this.tex['P_TITAN'] = data;
+            if(n.includes('player.png')) this.tex['P'] = data;
+            else if(n.includes('player_up')) this.tex['P_UP'] = data;
+            else if(n.includes('player_down')) this.tex['P_DOWN'] = data;
+            else if(n.includes('player_titan')) this.tex['P_TITAN'] = data;
             else if(n.includes('bg_far')) this.tex['BG_FAR'] = data;
             else if(n.includes('bg_mid')) this.tex['BG_MID'] = data;
             else if(n.includes('bg_near')) this.tex['BG_NEAR'] = data;
@@ -437,7 +463,7 @@ const AudioSys = {
 };
 
 // ==========================================
-// 3. 兜底美术 (Procedural)
+// 3. 兜底美术 (Procedural Fallback)
 // ==========================================
 function createGlowingBullet(color, isEnemy) {
     const g = new PIXI.Graphics();
@@ -454,6 +480,7 @@ function createRectTex(w,h,c) {
     return app.renderer.generateTexture(g);
 }
 function initDefaults() {
+    // 只有当图片真的没加载进来时，才用这些方块
     if(!Assets.tex['P']) Assets.tex['P'] = createRectTex(40,20,C.C);
     if(!Assets.tex['P_UP']) Assets.tex['P_UP'] = Assets.tex['P']; 
     if(!Assets.tex['P_DOWN']) Assets.tex['P_DOWN'] = Assets.tex['P'];
@@ -473,7 +500,11 @@ let state='MENU', score=0, dist=0, speed=1.0, shake=0, flash=0, time=0;
 const keys={};
 
 window.onload = function() {
-    app = new PIXI.Application({width:960, height:540, backgroundColor:0x050508, antialias:false});
+    // resolution 设为 devicePixelRatio，保证高清屏清晰度
+    app = new PIXI.Application({
+        width:960, height:540, backgroundColor:0x050508, 
+        antialias:false, resolution: window.devicePixelRatio || 1, autoDensity: true
+    });
     document.getElementById('game-view').appendChild(app.view);
     stage = new PIXI.Container(); app.stage.addChild(stage);
     
