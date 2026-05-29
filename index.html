@@ -17,7 +17,7 @@
             overflow: hidden; user-select: none; touch-action: none;
         }
 
-        /* 新增：如果玩家是竖屏，强制提示他们横过来 */
+        /* 竖屏强制提示横屏 */
         @media screen and (orientation: portrait) {
             #game-wrapper { display: none !important; }
             body::before {
@@ -127,6 +127,7 @@
             margin-top: 20px; padding: 20px; width: 450px;
             background: rgba(0,0,0,0.6); border: 1px solid #334;
             border-top: 3px solid #0ff; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+            max-width: 90vw; box-sizing: border-box;
         }
         .lb-title { color: #0ff; font-family: 'Audiowide'; text-align: center; margin-bottom: 15px; letter-spacing: 3px;}
         .lb-row { display: flex; justify-content: space-between; align-items: center; font-size: 20px; color: #ccc; margin-bottom: 8px; border-bottom: 1px dashed #223; padding-bottom: 5px; }
@@ -180,7 +181,6 @@
             </div>
         </div>
 
-        <!-- 触控与全平台虚拟按键 -->
         <div id="touch-ui">
             <div id="btn-fs" class="mobile-btn" onpointerdown="toggleFullscreen(); event.stopPropagation();" title="Fullscreen [F]">🖵</div>
             <div id="btn-pause" class="mobile-btn" onpointerdown="togglePause(); event.stopPropagation();" title="Pause [V]">⏸</div>
@@ -214,7 +214,7 @@
                 </button>
             </div>
             
-            <div style="width: 400px; height: 4px; background: #333;">
+            <div style="width: 400px; max-width: 80%; height: 4px; background: #333;">
                 <div id="loading-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.1s;"></div>
             </div>
             <button class="btn" id="start-btn" onclick="startGame()" style="display:none; margin-top:30px; border-color:#0f0; color:#0f0; box-shadow:0 0 30px #0f0;">>>> START <<<</button>
@@ -240,10 +240,16 @@
 
 <script>
 // ==========================================
-// 1. 配置 & 适配 & 全平台输入系统
+// 1. 配置 & 适配 & 全平台输入系统 & 苹果特供修复
 // ==========================================
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
+
+// 🍎 核心修复 1：强制识别 iOS 设备，屏蔽 WebGL2.0 的恶性渲染 Bug
+const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (isAppleMobile) {
+    PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL_LEGACY; 
+}
 
 const TARGET_SIZES = { P: 64, E_S: 48, E_M: 64, E_L: 128, E_XS: 32, ITEM: 48, BULLET_P: 48, BULLET_E: 32 };
 const C = { C:0x00FFFF, M:0xFF00FF, Y:0xFFFF00, R:0xFF3333, G:0x39FF14, O:0xFFA500, W:0xFFFFFF };
@@ -283,7 +289,9 @@ resizeGame();
 
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => log(`FS Error: ${err.message}`, 'err'));
+        if(document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => log(`FS Error: ${err.message}`, 'err'));
+        }
     } else {
         if (document.exitFullscreen) document.exitFullscreen();
     }
@@ -293,7 +301,8 @@ function toggleFullscreen() {
 const gw = document.getElementById('game-wrapper');
 gw.addEventListener('touchstart', e => {
     if(state !== 'PLAY') return;
-    e.preventDefault(); // 阻止浏览器滚动
+    if(e.target.closest('.mobile-btn')) return; // 点按钮时不要移动飞机
+    e.preventDefault(); 
     touchActive = true; 
     inputState.shoot = true;
     const t = e.touches[0];
@@ -315,7 +324,7 @@ gw.addEventListener('touchmove', e => {
     const scaleY = 540 / rect.height;
     const tx = (t.clientX - rect.left) * scaleX;
     const ty = (t.clientY - rect.top) * scaleY;
-    // 相对拖拽逻辑：手指移动距离直接映射为飞机位移
+    // 相对拖拽逻辑
     player.x = Math.max(40, Math.min(920, playerStartX + (tx - touchStartX)));
     player.y = Math.max(40, Math.min(500, playerStartY + (ty - touchStartY)));
 }, {passive: false});
@@ -334,8 +343,8 @@ function selectDifficulty(mode) {
     difficulty = mode;
     document.getElementById('menu-screen').style.display='none';
     
-    // 如果是手机端，可以在选择难度后自动全屏
-    if(window.innerWidth < 960 && !document.fullscreenElement) {
+    // 如果是手机端，可以在选择难度后尝试全屏
+    if(window.innerWidth < 960 && !document.fullscreenElement && document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(e=>{});
     }
 
@@ -487,17 +496,30 @@ let state='MENU', score=0, dist=0, speed=1.0, shake=0, flash=0, time=0;
 const keys={};
 
 window.onload = function() {
-    app = new PIXI.Application({ width:960, height:540, backgroundColor:0x050508, antialias:false, resolution: window.devicePixelRatio || 1, autoDensity: true });
-    document.getElementById('game-view').appendChild(app.view); stage = new PIXI.Container(); app.stage.addChild(stage);
-    bgLayer = new PIXI.Container(); stage.addChild(bgLayer); trailLayer = new PIXI.Container(); stage.addChild(trailLayer); gameLayer = new PIXI.Container(); stage.addChild(gameLayer); fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
     
-    // --- 修复黑屏核心补丁 ---
+    // 🍎 核心修复 2：针对 iPhone 14/15 Pro 三倍视网膜屏幕进行显存拦截限制！
+    // 强制把手机分辨率压缩在最大2倍之内，防止 VRAM 溢出闪退黑屏
+    let safeResolution = window.devicePixelRatio || 1;
+    if(isAppleMobile) safeResolution = Math.min(safeResolution, 2);
+
+    app = new PIXI.Application({ 
+        width:960, height:540, 
+        backgroundColor:0x050508, 
+        antialias:false, 
+        resolution: safeResolution, 
+        autoDensity: true 
+    });
+    
+    document.getElementById('game-view').appendChild(app.view); 
+    stage = new PIXI.Container(); app.stage.addChild(stage);
+    bgLayer = new PIXI.Container(); stage.addChild(bgLayer); 
+    trailLayer = new PIXI.Container(); stage.addChild(trailLayer); 
+    gameLayer = new PIXI.Container(); stage.addChild(gameLayer); 
+    fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
+    
     try { 
-        // 识别是否为移动端设备
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        // 如果不是移动端，才开启 WebGL 滤镜特效
-        if(PIXI.filters && !isMobile) { 
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if(PIXI.filters && !isMobileDevice) { 
             bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5}); 
             rgbSplit = new PIXI.filters.RGBSplitFilter(); 
             rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0}; 
@@ -560,7 +582,6 @@ function createGhost(target) { const ghost = new PIXI.Sprite(target.texture); gh
 function getRainbowColor(t) { const r = Math.sin(t)*127+128; const g = Math.sin(t+2)*127+128; const b = Math.sin(t+4)*127+128; return (r<<16)|(g<<8)|b; }
 
 function loop(delta) {
-    // 处理手柄输入
     inputState.mx = 0; inputState.my = 0; inputState.shoot = false;
     const gps = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = gps[0];
@@ -595,11 +616,9 @@ function loop(delta) {
     if(keys['ArrowUp']||keys['w']) my=-1; if(keys['ArrowDown']||keys['s']) my=1;
     if(keys['ArrowLeft']||keys['a']) mx=-1; if(keys['ArrowRight']||keys['d']) mx=1;
     
-    // 合并手柄摇杆与键盘输入
     if(inputState.mx !== 0) mx = inputState.mx;
     if(inputState.my !== 0) my = inputState.my;
 
-    // 只有在未触摸拖拽的情况下，才应用键盘和手柄的移动逻辑
     if(!touchActive) {
         player.x += mx*spd*delta; player.y += my*spd*delta;
         player.x=Math.max(40,Math.min(920,player.x)); player.y=Math.max(40,Math.min(500,player.y));
