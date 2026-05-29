@@ -11,7 +11,6 @@
         body {
             margin: 0; background-color: #000; color: #fff;
             font-family: 'Rajdhani', sans-serif;
-            /* 使用 dvh 解决 iOS 底部导航栏遮挡问题 */
             height: 100vh; height: 100dvh; 
             display: flex; justify-content: center; align-items: center;
             overflow: hidden; user-select: none; touch-action: none;
@@ -107,6 +106,44 @@
         .btn-nan { border-color: #f00; color: #f00; }
         .btn-nan:hover { background: #f00; color: #fff; box-shadow: 0 0 50px #f00; }
 
+        /* ==========================================
+        /* 新增：全新驾驶员大立绘选人界面 UI 样式
+        /* ========================================== */
+        #pilot-screen {
+            display: flex; flex-direction: row; justify-content: space-between; align-items: center;
+            padding: 0 50px; box-sizing: border-box; width: 100%; height: 100%;
+        }
+        .pilot-left-panel {
+            display: flex; flex-direction: column; gap: 15px; width: 300px; z-index: 110;
+        }
+        .pilot-btn {
+            background: rgba(0, 20, 30, 0.6); border: 2px solid rgba(0, 255, 255, 0.2);
+            color: rgba(0, 255, 255, 0.4); font-family: 'Audiowide'; font-size: 18px;
+            padding: 15px 20px; text-align: left; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 2px; transform: skewX(-10deg);
+        }
+        .pilot-btn.active {
+            border-color: #0ff; color: #fff; background: rgba(0, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(0,255,255,0.4);
+        }
+        .pilot-btn.locked {
+            border-color: #333; color: #555; background: rgba(10,10,10,0.5); cursor: not-allowed;
+        }
+        .pilot-right-stage {
+            position: relative; width: 450px; height: 500px; display: flex; justify-content: center; align-items: flex-end; z-index: 105;
+        }
+        #pilot-display-img {
+            width: 400px; height: 500px; object-fit: contain;
+            transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; transform: translateY(20px);
+        }
+        .pilot-info-box {
+            position: absolute; bottom: 20px; left: -40px; background: rgba(0,5,10,0.85);
+            border-left: 4px solid #0ff; padding: 15px; width: 260px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            font-family: 'Rajdhani'; transform: skewX(-5deg); pointer-events: none;
+        }
+        .pilot-info-name { font-family: 'Audiowide'; font-size: 24px; color: #fff; margin-bottom: 5px; }
+        .pilot-info-desc { font-size: 14px; color: #0ff; opacity: 0.8; line-height: 1.4; }
+
         /* 触控与平台UI按钮 */
         #touch-ui { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
         .mobile-btn {
@@ -143,11 +180,6 @@
 
         #titan-msg { position: absolute; top: 35%; width: 100%; text-align: center; font-size: 120px; color: #fff; font-family: 'Audiowide'; text-shadow: 0 0 60px #f05; display: none; z-index: 20; letter-spacing: 10px; mix-blend-mode: overlay; animation: pulse 0.1s infinite; }
         .nan-msg { font-size: 28px; font-weight: bold; margin-bottom: 10px; background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff); background-size: 400% 400%; -webkit-background-clip: text; color: transparent; animation: rainbow 5s ease infinite; font-family: "Microsoft YaHei", sans-serif; }
-
-        @keyframes glitch { 0%{transform:skew(0deg)} 20%{transform:skew(-5deg)} 22%{transform:skew(5deg)} 24%{transform:skew(0deg)} }
-        @keyframes blink { 0%{opacity:1} 50%{opacity:0.2} }
-        @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} }
-        @keyframes rainbow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
@@ -181,6 +213,7 @@
             </div>
         </div>
 
+        <!-- 触控与全平台虚拟按键 -->
         <div id="touch-ui">
             <div id="btn-fs" class="mobile-btn" onpointerdown="toggleFullscreen(); event.stopPropagation();" title="Fullscreen [F]">🖵</div>
             <div id="btn-pause" class="mobile-btn" onpointerdown="togglePause(); event.stopPropagation();" title="Pause [V]">⏸</div>
@@ -189,6 +222,7 @@
 
         <div id="titan-msg">TITAN MODE</div>
 
+        <!-- 难度与姓名输入主界面 -->
         <div id="menu-screen" class="overlay">
             <h1>HISINGY</h1>
             <div style="font-size:16px; color:#888; letter-spacing:10px; margin-bottom:30px;">RESTORED</div>
@@ -199,6 +233,29 @@
                 <button class="btn btn-easy" onclick="selectDifficulty(1)">EASY</button>
                 <button class="btn btn-norm" onclick="selectDifficulty(2)">NORMAL</button>
                 <button class="btn btn-nan" onclick="selectDifficulty(3)">NAN MODE</button>
+            </div>
+        </div>
+
+        <!-- 新增：全新的驾驶员大立绘选人界面层 -->
+        <div id="pilot-screen" class="overlay" style="display:none; background: rgba(2, 4, 8, 0.98);">
+            <div class="pilot-left-panel">
+                <div style="font-family:'Audiowide'; font-size:24px; color:#0ff; letter-spacing:2px; margin-bottom:10px;">SELECT PILOT</div>
+                <button class="pilot-btn active" onclick="previewPilot('stargazer')">01: GAZER</button>
+                <button class="pilot-btn locked">02: LIGHTCHASER</button>
+                <button class="pilot-btn locked">03: FIREFLY</button>
+                <button class="pilot-btn locked">04: MACH 500</button>
+                <button class="pilot-btn locked">05: DRONE</button>
+                
+                <button class="btn" onclick="confirmPilotSelection()" style="margin: 20px 0 0 0; border-color:#0f0; color:#0f0; width:100%;">CONFIRM</button>
+            </div>
+            
+            <div class="pilot-right-stage">
+                <!-- 动态大立绘展示 -->
+                <img id="pilot-display-img" src="" alt="pilot">
+                <div class="pilot-info-box">
+                    <div class="pilot-info-name" id="pilot-info-name">---</div>
+                    <div class="pilot-info-desc" id="pilot-info-desc">---</div>
+                </div>
             </div>
         </div>
 
@@ -245,7 +302,6 @@
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.ROUND_PIXELS = true;
 
-// 🍎 核心修复 1：强制识别 iOS 设备，屏蔽 WebGL2.0 的恶性渲染 Bug
 const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 if (isAppleMobile) {
     PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL_LEGACY; 
@@ -259,13 +315,21 @@ let currentPlayerName = "GUEST";
 const modeText = {1: 'EASY', 2: 'NORMAL', 3: 'NAN'}; 
 let fallbackBoard = [];
 
-// 输入状态存储
 const inputState = { mx: 0, my: 0, shoot: false };
 let touchActive = false;
 let touchStartX = 0, touchStartY = 0;
 let playerStartX = 0, playerStartY = 0;
 let gpEmpPressed = false;
 let gpPausePressed = false;
+
+// 驾驶员介绍文本库
+const pilotData = {
+    stargazer: {
+        name: "观星者 - GAZER",
+        desc: "配备经典全面型核心。高频能量子弹开路，拥有全清屏超级EMP电磁冲击波。",
+        img: "assets/pilots/pilot_stargazer.png"
+    }
+};
 
 function log(msg, type='ok') {
     const el = document.getElementById('console-log');
@@ -301,7 +365,7 @@ function toggleFullscreen() {
 const gw = document.getElementById('game-wrapper');
 gw.addEventListener('touchstart', e => {
     if(state !== 'PLAY') return;
-    if(e.target.closest('.mobile-btn')) return; // 点按钮时不要移动飞机
+    if(e.target.closest('.mobile-btn')) return; 
     e.preventDefault(); 
     touchActive = true; 
     inputState.shoot = true;
@@ -324,7 +388,6 @@ gw.addEventListener('touchmove', e => {
     const scaleY = 540 / rect.height;
     const tx = (t.clientX - rect.left) * scaleX;
     const ty = (t.clientY - rect.top) * scaleY;
-    // 相对拖拽逻辑
     player.x = Math.max(40, Math.min(920, playerStartX + (tx - touchStartX)));
     player.y = Math.max(40, Math.min(500, playerStartY + (ty - touchStartY)));
 }, {passive: false});
@@ -333,17 +396,53 @@ gw.addEventListener('touchend', e => {
     if(e.touches.length === 0) { touchActive = false; inputState.shoot = false; }
 });
 
-
 function getScale(tex, target) { return target / Math.max(tex.width, tex.height); }
 
+// 阶段 1：点击主界面难度按钮后切换到选人界面
 function selectDifficulty(mode) {
     let inputVal = document.getElementById('player-name').value.trim();
     currentPlayerName = inputVal !== "" ? inputVal.toUpperCase() : "GUEST";
     document.getElementById('ui-player-display').innerText = currentPlayerName;
     difficulty = mode;
-    document.getElementById('menu-screen').style.display='none';
     
-    // 如果是手机端，可以在选择难度后尝试全屏
+    document.getElementById('menu-screen').style.display = 'none';
+    document.getElementById('pilot-screen').style.display = 'flex';
+    
+    // 默认展示第一个可选角色
+    previewPilot('stargazer');
+}
+
+// 阶段 2：控制选人界面的立绘切换展示
+function previewPilot(id) {
+    const imgEl = document.getElementById('pilot-display-img');
+    const nameEl = document.getElementById('pilot-info-name');
+    const descEl = document.getElementById('pilot-info-desc');
+    
+    // 淡出效果
+    imgEl.style.opacity = 0;
+    imgEl.style.transform = "translateY(20px)";
+    
+    setTimeout(() => {
+        imgEl.src = pilotData[id].img;
+        nameEl.innerText = pilotData[id].name;
+        descEl.innerText = pilotData[id].desc;
+        
+        // 苹果端立绘兜底：如果立绘因为路径问题缺失，允许游戏继续而不卡死屏
+        imgEl.onerror = () => {
+            log(`立绘加载失败: assets/pilots/pilot_${id}.png`, 'warn');
+            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500'><rect width='100%' height='100%' fill='%23112'/><text x='50%' y='50%' font-family='sans-serif' font-size='20' fill='%230ff' text-anchor='middle'>立绘载入中...</text></svg>";
+        };
+        
+        // 淡入展示
+        imgEl.style.opacity = 1;
+        imgEl.style.transform = "translateY(0px)";
+    }, 150);
+}
+
+// 阶段 3：点击选人界面的确认按钮，正式进入核心加载环节
+function confirmPilotSelection() {
+    document.getElementById('pilot-screen').style.display = 'none';
+    
     if(window.innerWidth < 960 && !document.fullscreenElement && document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(e=>{});
     }
@@ -496,34 +595,18 @@ let state='MENU', score=0, dist=0, speed=1.0, shake=0, flash=0, time=0;
 const keys={};
 
 window.onload = function() {
-    
-    // 🍎 核心修复 2：针对 iPhone 14/15 Pro 三倍视网膜屏幕进行显存拦截限制！
-    // 强制把手机分辨率压缩在最大2倍之内，防止 VRAM 溢出闪退黑屏
     let safeResolution = window.devicePixelRatio || 1;
     if(isAppleMobile) safeResolution = Math.min(safeResolution, 2);
 
-    app = new PIXI.Application({ 
-        width:960, height:540, 
-        backgroundColor:0x050508, 
-        antialias:false, 
-        resolution: safeResolution, 
-        autoDensity: true 
-    });
-    
-    document.getElementById('game-view').appendChild(app.view); 
-    stage = new PIXI.Container(); app.stage.addChild(stage);
-    bgLayer = new PIXI.Container(); stage.addChild(bgLayer); 
-    trailLayer = new PIXI.Container(); stage.addChild(trailLayer); 
-    gameLayer = new PIXI.Container(); stage.addChild(gameLayer); 
-    fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
+    app = new PIXI.Application({ width:960, height:540, backgroundColor:0x050508, antialias:false, resolution: safeResolution, autoDensity: true });
+    document.getElementById('game-view').appendChild(app.view); stage = new PIXI.Container(); app.stage.addChild(stage);
+    bgLayer = new PIXI.Container(); stage.addChild(bgLayer); trailLayer = new PIXI.Container(); stage.addChild(trailLayer); gameLayer = new PIXI.Container(); stage.addChild(gameLayer); fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
     
     try { 
         const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if(PIXI.filters && !isMobileDevice) { 
             bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5}); 
-            rgbSplit = new PIXI.filters.RGBSplitFilter(); 
-            rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0}; 
-            stage.filters = [bloomFilter, rgbSplit]; 
+            rgbSplit = new PIXI.filters.RGBSplitFilter(); rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0}; stage.filters = [bloomFilter, rgbSplit]; 
         }
     } catch(e){ log("Filters disabled", "warn"); }
     
