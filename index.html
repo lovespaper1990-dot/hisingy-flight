@@ -11,8 +11,20 @@
         body {
             margin: 0; background-color: #000; color: #fff;
             font-family: 'Rajdhani', sans-serif;
-            height: 100vh; display: flex; justify-content: center; align-items: center;
-            overflow: hidden; user-select: none; touch-action: none; /* 阻止移动端默认滑动刷新 */
+            /* 使用 dvh 解决 iOS 底部导航栏遮挡问题 */
+            height: 100vh; height: 100dvh; 
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none; touch-action: none;
+        }
+
+        /* 新增：如果玩家是竖屏，强制提示他们横过来 */
+        @media screen and (orientation: portrait) {
+            #game-wrapper { display: none !important; }
+            body::before {
+                content: "PLEASE ROTATE YOUR DEVICE \A 请横屏游玩";
+                white-space: pre; text-align: center; font-family: 'Audiowide'; 
+                font-size: 24px; color: #0ff; line-height: 2;
+            }
         }
 
         #game-wrapper {
@@ -168,6 +180,7 @@
             </div>
         </div>
 
+        <!-- 触控与全平台虚拟按键 -->
         <div id="touch-ui">
             <div id="btn-fs" class="mobile-btn" onpointerdown="toggleFullscreen(); event.stopPropagation();" title="Fullscreen [F]">🖵</div>
             <div id="btn-pause" class="mobile-btn" onpointerdown="togglePause(); event.stopPropagation();" title="Pause [V]">⏸</div>
@@ -321,7 +334,7 @@ function selectDifficulty(mode) {
     difficulty = mode;
     document.getElementById('menu-screen').style.display='none';
     
-    // 如果是手机端，可以在选择难度后自动全屏 (可选体验增强)
+    // 如果是手机端，可以在选择难度后自动全屏
     if(window.innerWidth < 960 && !document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(e=>{});
     }
@@ -477,9 +490,21 @@ window.onload = function() {
     app = new PIXI.Application({ width:960, height:540, backgroundColor:0x050508, antialias:false, resolution: window.devicePixelRatio || 1, autoDensity: true });
     document.getElementById('game-view').appendChild(app.view); stage = new PIXI.Container(); app.stage.addChild(stage);
     bgLayer = new PIXI.Container(); stage.addChild(bgLayer); trailLayer = new PIXI.Container(); stage.addChild(trailLayer); gameLayer = new PIXI.Container(); stage.addChild(gameLayer); fxLayer = new PIXI.Container(); stage.addChild(fxLayer);
+    
+    // --- 修复黑屏核心补丁 ---
     try { 
-        if(PIXI.filters) { bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5}); rgbSplit = new PIXI.filters.RGBSplitFilter(); rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0}; stage.filters = [bloomFilter, rgbSplit]; }
-    } catch(e){}
+        // 识别是否为移动端设备
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // 如果不是移动端，才开启 WebGL 滤镜特效
+        if(PIXI.filters && !isMobile) { 
+            bloomFilter = new PIXI.filters.AdvancedBloomFilter({threshold:0.3, bloomScale:1.5, brightness:1.2, blur:6, quality:5}); 
+            rgbSplit = new PIXI.filters.RGBSplitFilter(); 
+            rgbSplit.red = {x:0,y:0}; rgbSplit.blue = {x:0,y:0}; rgbSplit.green = {x:0,y:0}; 
+            stage.filters = [bloomFilter, rgbSplit]; 
+        }
+    } catch(e){ log("Filters disabled", "warn"); }
+    
     initDefaults(); const hpCon = document.getElementById('hp-bar'); for(let i=0; i<20; i++) { hpCon.appendChild(document.createElement('div')).className = 'hp-seg on'; } app.ticker.add(loop);
 };
 
